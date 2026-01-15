@@ -1,0 +1,74 @@
+<svg width="1024" height="1024"
+     viewBox="0 0 1024 1024"
+     xmlns="http://www.w3.org/2000/svg"
+     style="display: block; margin: 0 auto;">
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="220" fill="#141918"/>
+  <!-- Calligraphic S -->
+  <path
+    d="M660 320
+       C600 260 460 270 430 350
+       C400 430 540 460 610 495
+       C690 535 715 610 670 675
+       C625 740 485 755 380 700"
+    fill="none"
+    stroke="#9DB7B1"
+    stroke-width="64"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    pathLength="1"
+    stroke-dasharray="1"
+    stroke-dashoffset="1">
+    <animate
+      attributeName="stroke-dashoffset"
+      from="1" to="0"
+      dur="1.9s"
+      begin="0.2s"
+      fill="freeze"
+      calcMode="spline"
+      keySplines="0.45 0 0.25 1"/>
+    <animate
+      attributeName="stroke-width"
+      from="60" to="66"
+      dur="1.2s"
+      begin="0.9s"
+      fill="freeze"
+      calcMode="spline"
+      keySplines="0.4 0 0.2 1"/>
+  </path>
+  <!-- App name -->
+  <text
+    x="512"
+    y="850"
+    text-anchor="middle"
+    font-size="68"
+    fill="#D6E2DE"
+    font-family="Canela, Editorial New, Inter, system-ui"
+    letter-spacing="1"
+    opacity="0">
+    Serein
+    <animate
+      attributeName="opacity"
+      from="0" to="1"
+      dur="0.9s"
+      begin="1.6s"
+      fill="freeze"/>
+  </text>
+  <!-- Tagline -->
+  <text
+    x="512"
+    y="910"
+    text-anchor="middle"
+    font-size="34"
+    fill="#9DB7B1"
+    font-family="Inter, system-ui"
+    opacity="0">
+    Move Gently Forward
+    <animate
+      attributeName="opacity"
+      from="0" to="1"
+      dur="1s"
+      begin="2.1s"
+      fill="freeze"/>
+  </text>
+</svg>
