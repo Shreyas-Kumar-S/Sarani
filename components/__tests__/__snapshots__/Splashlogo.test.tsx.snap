@@ -1,0 +1,371 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SplashLogo SplashLogoDark matches snapshot (dark mode) 1`] = `
+<RNSVGSvgView
+  align="xMidYMid"
+  bbHeight={350}
+  bbWidth={350}
+  focusable={false}
+  height={350}
+  meetOrSlice={0}
+  minX={0}
+  minY={0}
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderWidth": 0,
+      },
+      {
+        "flex": 0,
+        "height": 350,
+        "width": 350,
+      },
+    ]
+  }
+  vbHeight={1024}
+  vbWidth={1024}
+  width={350}
+>
+  <RNSVGGroup
+    fill={
+      {
+        "payload": 4278190080,
+        "type": 0,
+      }
+    }
+  >
+    <RNSVGRect
+      fill={
+        {
+          "payload": 4279507224,
+          "type": 0,
+        }
+      }
+      height="1024"
+      propList={
+        [
+          "fill",
+        ]
+      }
+      rx="220"
+      width="1024"
+      x={0}
+      y={0}
+    />
+    <RNSVGPath
+      d="M660 320 C600 260 460 270 430 350 C400 430 540 460 610 495 C690 535 715 610 670 675 C625 740 485 755 380 700"
+      fill={null}
+      propList={
+        [
+          "fill",
+          "stroke",
+          "strokeDasharray",
+          "strokeLinecap",
+          "strokeLinejoin",
+        ]
+      }
+      stroke={
+        {
+          "payload": 4288526257,
+          "type": 0,
+        }
+      }
+      strokeDasharray={
+        [
+          "1090",
+          "1090",
+        ]
+      }
+      strokeLinecap={1}
+      strokeLinejoin={1}
+    />
+    <RNSVGText
+      content={null}
+      dx={[]}
+      dy={[]}
+      fill={
+        {
+          "payload": 4292272862,
+          "type": 0,
+        }
+      }
+      font={
+        {
+          "fontFamily": "system-ui",
+          "fontSize": "68",
+          "letterSpacing": "1",
+          "textAnchor": "middle",
+        }
+      }
+      propList={
+        [
+          "fill",
+        ]
+      }
+      rotate={[]}
+      x={
+        [
+          "512",
+        ]
+      }
+      y={
+        [
+          "850",
+        ]
+      }
+    >
+      <RNSVGTSpan
+        content="Serein"
+        dx={[]}
+        dy={[]}
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+        font={{}}
+        rotate={[]}
+        x={[]}
+        y={[]}
+      />
+    </RNSVGText>
+    <RNSVGText
+      content={null}
+      dx={[]}
+      dy={[]}
+      fill={
+        {
+          "payload": 4288526257,
+          "type": 0,
+        }
+      }
+      font={
+        {
+          "fontFamily": "system-ui",
+          "fontSize": "34",
+          "textAnchor": "middle",
+        }
+      }
+      propList={
+        [
+          "fill",
+        ]
+      }
+      rotate={[]}
+      x={
+        [
+          "512",
+        ]
+      }
+      y={
+        [
+          "910",
+        ]
+      }
+    >
+      <RNSVGTSpan
+        content="Move Gently Forward"
+        dx={[]}
+        dy={[]}
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+        font={{}}
+        rotate={[]}
+        x={[]}
+        y={[]}
+      />
+    </RNSVGText>
+  </RNSVGGroup>
+</RNSVGSvgView>
+`;
+
+exports[`SplashLogo SplashLogoLight matches snapshot (light mode) 1`] = `
+<RNSVGSvgView
+  align="xMidYMid"
+  bbHeight={350}
+  bbWidth={350}
+  focusable={false}
+  height={350}
+  meetOrSlice={0}
+  minX={0}
+  minY={0}
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderWidth": 0,
+      },
+      {
+        "flex": 0,
+        "height": 350,
+        "width": 350,
+      },
+    ]
+  }
+  vbHeight={1024}
+  vbWidth={1024}
+  width={350}
+>
+  <RNSVGGroup
+    fill={
+      {
+        "payload": 4278190080,
+        "type": 0,
+      }
+    }
+  >
+    <RNSVGRect
+      fill={
+        {
+          "payload": 4294637813,
+          "type": 0,
+        }
+      }
+      height="1024"
+      propList={
+        [
+          "fill",
+        ]
+      }
+      rx="220"
+      width="1024"
+      x={0}
+      y={0}
+    />
+    <RNSVGPath
+      d="M660 320 C600 260 460 270 430 350 C400 430 540 460 610 495 C690 535 715 610 670 675 C625 740 485 755 380 700"
+      fill={null}
+      propList={
+        [
+          "fill",
+          "stroke",
+          "strokeDasharray",
+          "strokeLinecap",
+          "strokeLinejoin",
+        ]
+      }
+      stroke={
+        {
+          "payload": 4286225270,
+          "type": 0,
+        }
+      }
+      strokeDasharray={
+        [
+          "1090",
+          "1090",
+        ]
+      }
+      strokeLinecap={1}
+      strokeLinejoin={1}
+    />
+    <RNSVGText
+      content={null}
+      dx={[]}
+      dy={[]}
+      fill={
+        {
+          "payload": 4282006074,
+          "type": 0,
+        }
+      }
+      font={
+        {
+          "fontFamily": "system-ui",
+          "fontSize": "68",
+          "letterSpacing": "1",
+          "textAnchor": "middle",
+        }
+      }
+      propList={
+        [
+          "fill",
+        ]
+      }
+      rotate={[]}
+      x={
+        [
+          "512",
+        ]
+      }
+      y={
+        [
+          "850",
+        ]
+      }
+    >
+      <RNSVGTSpan
+        content="Serein"
+        dx={[]}
+        dy={[]}
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+        font={{}}
+        rotate={[]}
+        x={[]}
+        y={[]}
+      />
+    </RNSVGText>
+    <RNSVGText
+      content={null}
+      dx={[]}
+      dy={[]}
+      fill={
+        {
+          "payload": 4286225270,
+          "type": 0,
+        }
+      }
+      font={
+        {
+          "fontFamily": "system-ui",
+          "fontSize": "34",
+          "textAnchor": "middle",
+        }
+      }
+      propList={
+        [
+          "fill",
+        ]
+      }
+      rotate={[]}
+      x={
+        [
+          "512",
+        ]
+      }
+      y={
+        [
+          "910",
+        ]
+      }
+    >
+      <RNSVGTSpan
+        content="Move Gently Forward"
+        dx={[]}
+        dy={[]}
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+        font={{}}
+        rotate={[]}
+        x={[]}
+        y={[]}
+      />
+    </RNSVGText>
+  </RNSVGGroup>
+</RNSVGSvgView>
+`;
