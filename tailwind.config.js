@@ -20,7 +20,7 @@ module.exports = {
           dark: "#5F7A5C",
         },
 
-        /* Surfaces */
+        /* Light Mode Surfaces */
         surface: {
           page: "hsla(35, 28%, 98%, 1)",
           primary: "hsla(35, 28%, 97%, 1)",
@@ -29,7 +29,16 @@ module.exports = {
           nav: "hsla(35, 28%, 97%, 1)",
         },
 
-        /* Text */
+        /* Dark Mode Surfaces */
+        'surface-dark': {
+          page: "hsla(0, 0%, 8%, 1)",
+          primary: "hsla(0, 0%, 10%, 1)",
+          secondary: "hsla(0, 0%, 12%, 1)",
+          inset: "hsla(120, 5%, 14%, 1)",
+          nav: "hsla(0, 0%, 10%, 1)",
+        },
+
+        /* Light Mode Text */
         ink: {
           primary: "rgba(0,0,0,0.85)",
           secondary: "rgba(0,0,0,0.60)",
@@ -39,7 +48,17 @@ module.exports = {
           link: "#7A9B76",
         },
 
-        /* Status (rare use) */
+        /* Dark Mode Text */
+        'ink-dark': {
+          primary: "rgba(255,255,255,0.90)",
+          secondary: "rgba(255,255,255,0.70)",
+          tertiary: "rgba(255,255,255,0.50)",
+          quaternary: "rgba(255,255,255,0.30)",
+          onPrimary: "rgba(0,0,0,0.85)",
+          link: "#9DB89A",
+        },
+
+        /* Status */
         success: {
           DEFAULT: "#D4E7D2",
           light: "#EBF5EA",

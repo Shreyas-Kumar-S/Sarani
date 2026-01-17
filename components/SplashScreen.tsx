@@ -1,13 +1,13 @@
-import { useColorScheme } from "nativewind";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from 'react';
 import Animated, {
-  runOnJS,
-  useAnimatedStyle,
   useSharedValue,
-  withDelay,
+  useAnimatedStyle,
   withTiming,
-} from "react-native-reanimated";
-import { SplashLogoDark, SplashLogoLight } from "./Splashlogo";
+  withDelay,
+  runOnJS,
+} from 'react-native-reanimated';
+import { useColorScheme } from 'nativewind';
+import { SplashLogoLight, SplashLogoDark } from './Splashlogo';
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -16,14 +16,18 @@ interface SplashScreenProps {
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const { colorScheme } = useColorScheme();
   const containerOpacity = useSharedValue(1);
+  const onFinishRef = useRef(onFinish);
 
   useEffect(() => {
-    // Fade out the entire splash screen after animations complete
+    onFinishRef.current = onFinish;
+  }, [onFinish]);
+
+  useEffect(() => {
     containerOpacity.value = withDelay(
-      3200, // Wait for all animations to finish
+      3200,
       withTiming(0, { duration: 500 }, (finished) => {
         if (finished) {
-          runOnJS(onFinish)();
+          runOnJS(onFinishRef.current)();
         }
       })
     );
@@ -38,10 +42,10 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       style={[{ flex: 1 }, animatedStyle]}
       className="items-center justify-center bg-surface-page dark:bg-surface-dark-page"
     >
-      {colorScheme === "dark" ? (
-        <SplashLogoDark width={300} height={300} />
+      {colorScheme === 'dark' ? (
+        <SplashLogoDark width={350} height={350} />
       ) : (
-        <SplashLogoLight width={300} height={300} />
+        <SplashLogoLight width={350} height={350} />
       )}
     </Animated.View>
   );

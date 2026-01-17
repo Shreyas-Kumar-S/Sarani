@@ -1,10 +1,25 @@
-// https://docs.expo.dev/guides/using-eslint/
-const { defineConfig } = require('eslint/config');
-const expoConfig = require('eslint-config-expo/flat');
+import { FlatCompat } from "@eslint/eslintrc";
+import prettierPlugin from "eslint-plugin-prettier";
 
-module.exports = defineConfig([
-  expoConfig,
+const compat = new FlatCompat({
+  baseDirectory: import.meta.dirname,
+});
+
+export default [
+  // ✅ Expo legacy config (wrapped safely)
+  ...compat.extends("expo"),
+
+  // ✅ Apply to source files
   {
-    ignores: ['dist/*'],
+    files: ["**/*.{js,jsx,ts,tsx}"],
+    plugins: {
+      prettier: prettierPlugin,
+    },
+    rules: {
+      "prettier/prettier": "error",
+    },
   },
-]);
+
+  // ✅ Disable conflicting ESLint formatting rules
+  ...compat.extends("prettier"),
+];
