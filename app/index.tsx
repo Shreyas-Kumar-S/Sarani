@@ -61,6 +61,7 @@ export default function Index() {
       1200,
       withTiming(1, { duration: 500, easing: Easing.out(Easing.back(1.5)) })
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const titleAnimatedStyle = useAnimatedStyle(() => ({

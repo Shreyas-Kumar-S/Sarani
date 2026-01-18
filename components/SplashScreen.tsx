@@ -31,6 +31,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         }
       })
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
