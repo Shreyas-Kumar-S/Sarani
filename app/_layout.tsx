@@ -1,3 +1,4 @@
+import React from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreenExpo from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -61,6 +62,7 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
       </Stack>
     </>
   );
