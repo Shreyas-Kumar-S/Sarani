@@ -8,7 +8,7 @@ type SectionTitleProps = {
 export default function SectionTitle({ title }: SectionTitleProps) {
   return (
     <View className="mb-3">
-      <Text className="text-base text-ink-secondary dark:text-ink-dark-secondary">
+      <Text className="font-serif text-[25px] text-ink-secondary dark:text-ink-dark-secondary">
         {title}
       </Text>
     </View>

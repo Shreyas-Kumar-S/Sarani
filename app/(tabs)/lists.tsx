@@ -1,3 +1,4 @@
+import React from 'react';
 import NotesScreen from '../../components/screens/NotesScreen';
 import { notesBlocks } from '../../data/mock/notes';
 

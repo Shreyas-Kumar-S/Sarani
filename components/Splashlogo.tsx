@@ -79,26 +79,26 @@ export const SplashLogoLight: React.FC<SplashLogoProps> = ({ width = 350, height
       />
       <AnimatedSvgText
         x="512"
-        y="850"
+        y="824"
         textAnchor="middle"
-        fontSize="68"
-        fill="#3A3A3A"
-        fontFamily="system-ui"
-        letterSpacing="1"
+        fontSize="104"
+        fill="#6F8580"
+        fontFamily="Georgia"
+        letterSpacing="2"
         animatedProps={textAnimatedProps}
       >
-        Serein
+        serein
       </AnimatedSvgText>
       <AnimatedSvgText
         x="512"
-        y="910"
+        y="875"
         textAnchor="middle"
-        fontSize="34"
-        fill="#7A9B76"
-        fontFamily="system-ui"
+        fontSize="32"
+        fill="#6F8580"
+        fontFamily="Georgia"
         animatedProps={taglineAnimatedProps}
       >
-        Move Gently Forward
+        move gently forward
       </AnimatedSvgText>
     </Svg>
   );
@@ -162,26 +162,26 @@ export const SplashLogoDark: React.FC<SplashLogoProps> = ({ width = 350, height 
       />
       <AnimatedSvgText
         x="512"
-        y="850"
+        y="844"
         textAnchor="middle"
-        fontSize="68"
+        fontSize="104"
         fill="#D6E2DE"
-        fontFamily="system-ui"
-        letterSpacing="1"
+        fontFamily="Georgia"
+        letterSpacing="2"
         animatedProps={textAnimatedProps}
       >
-        Serein
+        serein
       </AnimatedSvgText>
       <AnimatedSvgText
         x="512"
-        y="910"
+        y="895"
         textAnchor="middle"
-        fontSize="34"
+        fontSize="32"
         fill="#9DB7B1"
-        fontFamily="system-ui"
+        fontFamily="Georgia"
         animatedProps={taglineAnimatedProps}
       >
-        Move Gently Forward
+        move gently forward
       </AnimatedSvgText>
     </Svg>
   );

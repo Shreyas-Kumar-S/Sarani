@@ -1,30 +1,38 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { Pressable, Text, View } from 'react-native';
 
 type TaskRowProps = {
   label: string;
   time?: string;
   checked?: boolean;
+  onPress?: () => void;
 };
 
-export default function TaskRow({ label, time, checked }: TaskRowProps) {
+export default function TaskRow({ label, time, checked, onPress }: TaskRowProps) {
   return (
-    <View className="flex-row items-center py-3">
+    <Pressable className="flex-row items-center py-[13px]" onPress={onPress}>
       <View
-        className={`h-5 w-5 rounded-full border mr-3 ${
+        className={`mr-4 h-5 w-5 items-center justify-center rounded-full border ${
           checked
             ? 'bg-primary border-primary'
             : 'border-ink-quaternary dark:border-ink-dark-quaternary'
         }`}
-      />
-      <Text className="flex-1 text-[15px] text-ink-primary dark:text-ink-dark-primary">
+      >
+        {checked ? <Feather name="check" size={14} color="#F6F2EC" /> : null}
+      </View>
+      <Text
+        className={`flex-1 text-[21px] leading-7 text-ink-secondary dark:text-ink-dark-secondary ${
+          checked ? 'line-through opacity-55' : ''
+        }`}
+      >
         {label}
       </Text>
       {time ? (
-        <Text className="text-xs text-ink-quaternary dark:text-ink-dark-quaternary">
+        <Text className="ml-3 text-[17px] text-ink-tertiary dark:text-ink-dark-tertiary">
           {time}
         </Text>
       ) : null}
-    </View>
+    </Pressable>
   );
 }

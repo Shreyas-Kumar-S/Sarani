@@ -1,3 +1,4 @@
+import React from 'react';
 import TaskListScreen from '../../components/screens/TaskListScreen';
 import { upcomingSections } from '../../data/mock/tasks';
 

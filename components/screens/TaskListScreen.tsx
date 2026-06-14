@@ -1,18 +1,18 @@
-import React from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { ScrollView, Text, TextInput, View } from 'react-native';
 import BaseScreen from './BaseScreen';
 import Header from '../ui/Header';
 import SectionTitle from '../ui/SectionTitle';
 import TaskRow from '../ui/TaskRow';
 import PrimaryButton from '../ui/PrimaryButton';
 
-type TaskItem = {
+export type TaskItem = {
   label: string;
   time?: string;
   checked?: boolean;
 };
 
-type TaskSection = {
+export type TaskSection = {
   title: string;
   items: TaskItem[];
 };
@@ -23,6 +23,8 @@ type TaskListScreenProps = {
   sections: TaskSection[];
   ctaLabel: string;
   footerNote?: string;
+  onAddTask?: (label: string) => void;
+  onToggleTask?: (sectionIndex: number, itemIndex: number) => void;
 };
 
 export default function TaskListScreen({
@@ -31,34 +33,89 @@ export default function TaskListScreen({
   sections,
   ctaLabel,
   footerNote,
+  onAddTask,
+  onToggleTask,
 }: TaskListScreenProps) {
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [draftTask, setDraftTask] = useState('');
+  const inputRef = useRef<TextInput>(null);
+  const canAddTasks = Boolean(onAddTask);
+
+  const startAddingTask = () => {
+    if (!canAddTasks) {
+      return;
+    }
+
+    setIsAddingTask(true);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const submitTask = () => {
+    const label = draftTask.trim();
+
+    if (!label || !onAddTask) {
+      return;
+    }
+
+    onAddTask(label);
+    setDraftTask('');
+    setIsAddingTask(false);
+  };
+
   return (
     <BaseScreen className="pt-2">
       <Header title={greeting} />
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View className="rounded-3xl bg-surface-primary dark:bg-surface-dark-primary px-5 py-4">
-          <SectionTitle title={sectionTitle} />
-          <View className="rounded-2xl bg-surface-secondary dark:bg-surface-dark-secondary px-4 py-2">
-            {sections.map((section) => (
-              <View key={section.title} className="mb-4 last:mb-0">
-                <SectionTitle title={section.title} />
+      <ScrollView contentContainerClassName="pt-5" showsVerticalScrollIndicator={false}>
+        <View className="rounded-[28px] bg-surface-primary/90 dark:bg-surface-dark-primary/90 px-5 py-6 shadow-lg shadow-black/5">
+          {sections.map((section, sectionIndex) => (
+            <View
+              key={section.title}
+              className={`${sectionIndex === sections.length - 1 ? '' : 'mb-7'}`}
+            >
+              <SectionTitle title={sectionIndex === 0 ? sectionTitle : section.title} />
+              <View className="rounded-[22px] bg-white/55 dark:bg-surface-dark-secondary/80 px-4 py-2">
                 {section.items.map((item, index) => (
                   <View
                     key={`${section.title}-${item.label}-${index}`}
-                    className="border-b border-ink-quaternary/20 dark:border-ink-dark-quaternary/20 last:border-b-0"
+                    className="border-b border-ink-quaternary/15 dark:border-ink-dark-quaternary/15 last:border-b-0"
                   >
-                    <TaskRow label={item.label} time={item.time} checked={item.checked} />
+                    <TaskRow
+                      label={item.label}
+                      time={item.time}
+                      checked={item.checked}
+                      onPress={onToggleTask ? () => onToggleTask(sectionIndex, index) : undefined}
+                    />
                   </View>
                 ))}
+                {canAddTasks && isAddingTask && sectionIndex === 0 ? (
+                  <View className="border-t border-ink-quaternary/15 dark:border-ink-dark-quaternary/15 py-[13px]">
+                    <TextInput
+                      ref={inputRef}
+                      value={draftTask}
+                      onChangeText={setDraftTask}
+                      onSubmitEditing={submitTask}
+                      onBlur={submitTask}
+                      returnKeyType="done"
+                      placeholder="New task"
+                      placeholderTextColor="rgba(0,0,0,0.28)"
+                      className="text-[21px] leading-7 text-ink-secondary dark:text-ink-dark-secondary"
+                    />
+                  </View>
+                ) : null}
               </View>
-            ))}
-            <PrimaryButton label={ctaLabel} />
-          </View>
+            </View>
+          ))}
+          {sections.length === 1 ? (
+            <PrimaryButton label={ctaLabel} onPress={startAddingTask} />
+          ) : (
+            <View className="mt-1">
+              <PrimaryButton label={ctaLabel} onPress={startAddingTask} />
+            </View>
+          )}
         </View>
         {footerNote ? (
-          <View className="mt-6 items-center">
-            <View className="h-[3px] w-10 rounded-full bg-primary/30" />
-            <Text className="mt-3 text-xs text-ink-quaternary dark:text-ink-dark-quaternary tracking-wide">
+          <View className="mt-6 items-center pb-6">
+            <Text className="font-serif text-base tracking-wide text-ink-tertiary dark:text-ink-dark-tertiary">
               {footerNote}
             </Text>
           </View>
