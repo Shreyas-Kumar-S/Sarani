@@ -1,14 +1,19 @@
 import React from 'react';
-import TaskListScreen from '../../components/screens/TaskListScreen';
-import { somedaySections } from '../../data/mock/tasks';
+import TaskListScreen from '@/components/screens/TaskListScreen';
+import { useTaskList } from '@/hooks/TaskStore';
 
 export default function SomedayScreen() {
+  const { tasks, addTask, toggleTask, removeTask } = useTaskList('someday');
+
   return (
     <TaskListScreen
-      greeting="Hello again"
+      greeting="Someday, maybe"
       sectionTitle="This weekend"
-      sections={somedaySections}
+      sections={[{ title: 'This weekend', items: tasks }]}
       ctaLabel="+ Add task"
+      onAddTask={addTask}
+      onToggleTask={toggleTask}
+      onRemoveTask={removeTask}
     />
   );
 }

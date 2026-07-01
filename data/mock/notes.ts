@@ -1,4 +1,4 @@
-import type { NoteBlock } from '../../components/screens/NotesScreen';
+import type { NoteBlock } from '@/types/note';
 
 export const notesBlocks: NoteBlock[] = [
   {

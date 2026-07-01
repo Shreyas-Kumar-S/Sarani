@@ -1,30 +1,20 @@
-import React, { useState } from 'react';
-import TaskListScreen, { TaskItem } from '../../components/screens/TaskListScreen';
+import React from 'react';
+import TaskListScreen from '@/components/screens/TaskListScreen';
+import { useTaskList } from '@/hooks/TaskStore';
 
 export default function TodayScreen() {
-  const [tasks, setTasks] = useState<TaskItem[]>([]);
-
-  const addTask = (label: string) => {
-    setTasks((currentTasks) => [...currentTasks, { label, checked: false }]);
-  };
-
-  const toggleTask = (_sectionIndex: number, itemIndex: number) => {
-    setTasks((currentTasks) =>
-      currentTasks.map((task, index) =>
-        index === itemIndex ? { ...task, checked: !task.checked } : task
-      )
-    );
-  };
+  const { tasks, addTask, toggleTask, removeTask } = useTaskList('today');
 
   return (
     <TaskListScreen
-      greeting="Good morning"
+      greeting="Today's focus"
       sectionTitle="Today"
       sections={[{ title: 'Today', items: tasks }]}
       ctaLabel="+ Add task"
       footerNote="Move gently forward"
       onAddTask={addTask}
       onToggleTask={toggleTask}
+      onRemoveTask={removeTask}
     />
   );
 }

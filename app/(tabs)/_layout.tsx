@@ -3,7 +3,16 @@ import { BlurView } from 'expo-blur';
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
-import { Dimensions, StyleSheet } from 'react-native';
+import { Dimensions, StyleSheet, View } from 'react-native';
+import AtmosphericBackground from '@/components/ui/AtmosphericBackground';
+import { TabKey, TaskProvider, useTabAllComplete } from '@/hooks/TaskStore';
+
+// Reflects a tab's task state: empty square until every task in the tab is
+// checked off, then a ticked square.
+function TaskTabIcon({ tab, color, size }: { tab: TabKey; color: string; size: number }) {
+  const allComplete = useTabAllComplete(tab);
+  return <Feather name={allComplete ? 'check-square' : 'square'} size={size} color={color} />;
+}
 
 export default function TabsLayout() {
   const { colorScheme } = useColorScheme();
@@ -36,60 +45,74 @@ export default function TabsLayout() {
   };
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: isDark ? '#9DB89A' : '#7A9B76',
-        tabBarInactiveTintColor: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)',
-        tabBarStyle: baseTabBarStyle,
-        tabBarBackground: () => (
-          <BlurView
-            experimentalBlurMethod="dimezisBlurView"
-            intensity={isDark ? 28 : 42}
-            tint={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 38, overflow: 'hidden' }]}
+    <TaskProvider>
+      <View style={{ flex: 1 }}>
+        {/* Persistent atmospheric layer — rendered once, behind the navigator, so
+            it stays continuous across tab switches instead of remounting per screen. */}
+        <View style={StyleSheet.absoluteFill} className="bg-surface-page dark:bg-surface-dark-page">
+          <AtmosphericBackground />
+        </View>
+        <Tabs
+          screenOptions={{
+            headerShown: false,
+            sceneStyle: { backgroundColor: 'transparent' },
+            tabBarActiveTintColor: isDark ? '#9DB89A' : '#7A9B76',
+            tabBarInactiveTintColor: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)',
+            tabBarStyle: baseTabBarStyle,
+            tabBarBackground: () => (
+              <BlurView
+                experimentalBlurMethod="dimezisBlurView"
+                intensity={isDark ? 28 : 42}
+                tint={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 38, overflow: 'hidden' }]}
+              />
+            ),
+            tabBarLabelStyle: {
+              fontSize: 12,
+            },
+          }}
+        >
+          <Tabs.Screen
+            name="today"
+            options={{
+              title: 'Today',
+              tabBarIcon: ({ color, size }) => (
+                <TaskTabIcon tab="today" color={color} size={size} />
+              ),
+            }}
           />
-        ),
-        tabBarLabelStyle: {
-          fontSize: 12,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="today"
-        options={{
-          title: 'Today',
-          tabBarIcon: ({ color, size }) => <Feather name="square" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="upcoming"
-        options={{
-          title: 'Upcoming',
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="check-square" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="someday"
-        options={{
-          title: 'Someday',
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="check-square" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="lists"
-        options={{
-          title: 'Lists',
-          tabBarActiveTintColor: '#DDE4DF',
-          tabBarInactiveTintColor: 'rgba(255,255,255,0.65)',
-          tabBarStyle: notesTabBarStyle,
-          tabBarIcon: ({ color, size }) => <Feather name="clipboard" size={size} color={color} />,
-        }}
-      />
-    </Tabs>
+          <Tabs.Screen
+            name="upcoming"
+            options={{
+              title: 'Upcoming',
+              tabBarIcon: ({ color, size }) => (
+                <TaskTabIcon tab="upcoming" color={color} size={size} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="someday"
+            options={{
+              title: 'Someday',
+              tabBarIcon: ({ color, size }) => (
+                <TaskTabIcon tab="someday" color={color} size={size} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="lists"
+            options={{
+              title: 'Lists',
+              tabBarActiveTintColor: '#DDE4DF',
+              tabBarInactiveTintColor: 'rgba(255,255,255,0.65)',
+              tabBarStyle: notesTabBarStyle,
+              tabBarIcon: ({ color, size }) => (
+                <Feather name="clipboard" size={size} color={color} />
+              ),
+            }}
+          />
+        </Tabs>
+      </View>
+    </TaskProvider>
   );
 }

@@ -2,15 +2,9 @@ import React from 'react';
 import { Feather } from '@expo/vector-icons';
 import { ScrollView, Text, View } from 'react-native';
 import BaseScreen from './BaseScreen';
-import Header from '../ui/Header';
-import PrimaryButton from '../ui/PrimaryButton';
-
-export type NoteBlock = {
-  title: string;
-  body: string;
-  meta?: string;
-  isLink?: boolean;
-};
+import Header from '@/components/ui/Header';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import { NoteBlock } from '@/types/note';
 
 type NotesScreenProps = {
   title: string;

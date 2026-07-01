@@ -2,6 +2,7 @@
   "expo": {
     "name": "Serein",
     "slug": "serein",
+    "scheme": "serein",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icons/app-icon.png",

@@ -7,7 +7,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { useColorScheme } from 'nativewind';
-import { SplashLogoLight, SplashLogoDark } from './Splashlogo';
+import { SplashLogoLight, SplashLogoDark } from './SplashLogo';
 
 interface SplashScreenProps {
   onFinish: () => void;

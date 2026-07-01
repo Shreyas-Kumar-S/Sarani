@@ -1,21 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { ScrollView, Text, TextInput, View } from 'react-native';
 import BaseScreen from './BaseScreen';
-import Header from '../ui/Header';
-import SectionTitle from '../ui/SectionTitle';
-import TaskRow from '../ui/TaskRow';
-import PrimaryButton from '../ui/PrimaryButton';
-
-export type TaskItem = {
-  label: string;
-  time?: string;
-  checked?: boolean;
-};
-
-export type TaskSection = {
-  title: string;
-  items: TaskItem[];
-};
+import Header from '@/components/ui/Header';
+import SectionTitle from '@/components/ui/SectionTitle';
+import TaskRow from '@/components/ui/TaskRow';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import { TaskSection } from '@/types/task';
 
 type TaskListScreenProps = {
   greeting: string;
@@ -25,6 +15,7 @@ type TaskListScreenProps = {
   footerNote?: string;
   onAddTask?: (label: string) => void;
   onToggleTask?: (sectionIndex: number, itemIndex: number) => void;
+  onRemoveTask?: (sectionIndex: number, itemIndex: number) => void;
 };
 
 export default function TaskListScreen({
@@ -35,6 +26,7 @@ export default function TaskListScreen({
   footerNote,
   onAddTask,
   onToggleTask,
+  onRemoveTask,
 }: TaskListScreenProps) {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [draftTask, setDraftTask] = useState('');
@@ -66,14 +58,14 @@ export default function TaskListScreen({
     <BaseScreen className="pt-2">
       <Header title={greeting} />
       <ScrollView contentContainerClassName="pt-5" showsVerticalScrollIndicator={false}>
-        <View className="rounded-[28px] bg-surface-primary/90 dark:bg-surface-dark-primary/90 px-5 py-6 shadow-lg shadow-black/5">
+        <View className="rounded-[28px] bg-white dark:bg-surface-dark-primary/90 px-5 py-6 shadow-lg shadow-black/[0.09] dark:shadow-black/[0.22] border border-black/[0.05] dark:border-transparent">
           {sections.map((section, sectionIndex) => (
             <View
               key={section.title}
               className={`${sectionIndex === sections.length - 1 ? '' : 'mb-7'}`}
             >
               <SectionTitle title={sectionIndex === 0 ? sectionTitle : section.title} />
-              <View className="rounded-[22px] bg-white/55 dark:bg-surface-dark-secondary/80 px-4 py-2">
+              <View className="rounded-[22px] bg-surface-secondary dark:bg-surface-dark-secondary/80 px-4 py-2">
                 {section.items.map((item, index) => (
                   <View
                     key={`${section.title}-${item.label}-${index}`}
@@ -84,6 +76,9 @@ export default function TaskListScreen({
                       time={item.time}
                       checked={item.checked}
                       onPress={onToggleTask ? () => onToggleTask(sectionIndex, index) : undefined}
+                      onLongPress={
+                        onRemoveTask ? () => onRemoveTask(sectionIndex, index) : undefined
+                      }
                     />
                   </View>
                 ))}

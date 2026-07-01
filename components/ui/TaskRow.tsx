@@ -7,11 +7,16 @@ type TaskRowProps = {
   time?: string;
   checked?: boolean;
   onPress?: () => void;
+  onLongPress?: () => void;
 };
 
-export default function TaskRow({ label, time, checked, onPress }: TaskRowProps) {
+export default function TaskRow({ label, time, checked, onPress, onLongPress }: TaskRowProps) {
   return (
-    <Pressable className="flex-row items-center py-[13px]" onPress={onPress}>
+    <Pressable
+      className="flex-row items-center py-[13px]"
+      onPress={onPress}
+      onLongPress={onLongPress}
+    >
       <View
         className={`mr-4 h-5 w-5 items-center justify-center rounded-full border ${
           checked

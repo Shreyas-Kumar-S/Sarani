@@ -79,7 +79,7 @@ export const SplashLogoLight: React.FC<SplashLogoProps> = ({ width = 350, height
       />
       <AnimatedSvgText
         x="512"
-        y="824"
+        y="844"
         textAnchor="middle"
         fontSize="104"
         fill="#6F8580"
