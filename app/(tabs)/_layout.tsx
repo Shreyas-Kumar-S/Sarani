@@ -5,6 +5,7 @@ import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import AtmosphericBackground from '@/components/ui/AtmosphericBackground';
+import { strings } from '@/constants/strings';
 import { TabKey, TaskProvider, useTabAllComplete } from '@/hooks/TaskStore';
 
 // Reflects a tab's task state: empty square until every task in the tab is
@@ -75,7 +76,7 @@ export default function TabsLayout() {
           <Tabs.Screen
             name="today"
             options={{
-              title: 'Today',
+              title: strings.tabs.today,
               tabBarIcon: ({ color, size }) => (
                 <TaskTabIcon tab="today" color={color} size={size} />
               ),
@@ -84,7 +85,7 @@ export default function TabsLayout() {
           <Tabs.Screen
             name="upcoming"
             options={{
-              title: 'Upcoming',
+              title: strings.tabs.upcoming,
               tabBarIcon: ({ color, size }) => (
                 <TaskTabIcon tab="upcoming" color={color} size={size} />
               ),
@@ -93,7 +94,7 @@ export default function TabsLayout() {
           <Tabs.Screen
             name="someday"
             options={{
-              title: 'Someday',
+              title: strings.tabs.someday,
               tabBarIcon: ({ color, size }) => (
                 <TaskTabIcon tab="someday" color={color} size={size} />
               ),
@@ -102,7 +103,7 @@ export default function TabsLayout() {
           <Tabs.Screen
             name="lists"
             options={{
-              title: 'Lists',
+              title: strings.tabs.lists,
               tabBarActiveTintColor: '#DDE4DF',
               tabBarInactiveTintColor: 'rgba(255,255,255,0.65)',
               tabBarStyle: notesTabBarStyle,

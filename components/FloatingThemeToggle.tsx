@@ -11,6 +11,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { strings } from '@/constants/strings';
 
 type FloatingThemeToggleProps = {
   // 0 = resting in the welcome composition (centered), 1 = docked in the corner.
@@ -18,7 +19,9 @@ type FloatingThemeToggleProps = {
 };
 
 const SIZE = 44;
-const CORNER_TOP = 6;
+// Vertically centers the toggle on the header title's line box (BaseScreen's
+// pt-2 + Header's pt-4 padding, plus half the 34px title's line height).
+const CORNER_TOP = 24;
 const CORNER_RIGHT = 16;
 
 // A single, persistent light/dark toggle. It mounts once (at the welcome phase) and
@@ -76,9 +79,9 @@ export default function FloatingThemeToggle({ dock }: FloatingThemeToggleProps) 
         activeOpacity={0.6}
         hitSlop={8}
         accessibilityRole="button"
-        accessibilityLabel="Toggle color theme"
+        accessibilityLabel={strings.a11y.toggleTheme}
       >
-        <Text style={{ fontSize: 24 }}>{colorScheme === 'dark' ? '🌙' : '☀️'}</Text>
+        <Text style={{ fontSize: 14 }}>{colorScheme === 'dark' ? '🌙' : '☀️'}</Text>
       </TouchableOpacity>
     </Animated.View>
   );

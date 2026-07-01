@@ -1,5 +1,6 @@
 import React from 'react';
 import TaskListScreen from '@/components/screens/TaskListScreen';
+import { strings } from '@/constants/strings';
 import { useTaskList } from '@/hooks/TaskStore';
 
 export default function TodayScreen() {
@@ -7,11 +8,11 @@ export default function TodayScreen() {
 
   return (
     <TaskListScreen
-      greeting="Today's focus"
-      sectionTitle="Today"
-      sections={[{ title: 'Today', items: tasks }]}
-      ctaLabel="+ Add task"
-      footerNote="Move gently forward"
+      greeting={strings.today.greeting}
+      sectionTitle={strings.today.sectionTitle}
+      sections={[{ title: strings.today.sectionTitle, items: tasks }]}
+      ctaLabel={strings.tasks.addCta}
+      footerNote={strings.today.footerNote}
       onAddTask={addTask}
       onToggleTask={toggleTask}
       onRemoveTask={removeTask}

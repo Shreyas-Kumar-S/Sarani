@@ -5,6 +5,7 @@ import Header from '@/components/ui/Header';
 import SectionTitle from '@/components/ui/SectionTitle';
 import TaskRow from '@/components/ui/TaskRow';
 import PrimaryButton from '@/components/ui/PrimaryButton';
+import { strings } from '@/constants/strings';
 import { TaskSection } from '@/types/task';
 
 type TaskListScreenProps = {
@@ -91,7 +92,7 @@ export default function TaskListScreen({
                       onSubmitEditing={submitTask}
                       onBlur={submitTask}
                       returnKeyType="done"
-                      placeholder="New task"
+                      placeholder={strings.tasks.newTaskPlaceholder}
                       placeholderTextColor="rgba(0,0,0,0.28)"
                       className="text-[21px] leading-7 text-ink-secondary dark:text-ink-dark-secondary"
                     />

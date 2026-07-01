@@ -4,6 +4,7 @@ import { ScrollView, Text, View } from 'react-native';
 import BaseScreen from './BaseScreen';
 import Header from '@/components/ui/Header';
 import PrimaryButton from '@/components/ui/PrimaryButton';
+import { strings } from '@/constants/strings';
 import { NoteBlock } from '@/types/note';
 
 type NotesScreenProps = {
@@ -21,7 +22,7 @@ export default function NotesScreen({ title, blocks, ctaLabel }: NotesScreenProp
           <View className="flex-row items-center gap-4">
             <Feather name="feather" size={26} color="#DDE4DF" />
             <Text className="flex-1 text-lg leading-7 font-serif text-ink-dark-primary">
-              Get thoughts out of your head{'\n'}and breathe a little easier
+              {strings.notes.intro}
             </Text>
           </View>
         </View>

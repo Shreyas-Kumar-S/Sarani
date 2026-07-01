@@ -8,6 +8,7 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
+import { strings } from '@/constants/strings';
 
 type WelcomeCurtainProps = {
   // Owned by the root layout; driven to 0 to fade the curtain and reveal the tabs.
@@ -60,21 +61,19 @@ export default function WelcomeCurtain({ curtainOpacity }: WelcomeCurtainProps) 
     >
       <Animated.View style={titleStyle} className="items-center mb-3">
         <Text className="text-4xl font-bold text-ink-primary dark:text-ink-dark-primary text-center">
-          Welcome to Serein
+          {strings.welcome.title}
         </Text>
       </Animated.View>
 
       <Animated.View style={taglineStyle} className="items-center mb-8">
         <Text className="text-xs uppercase tracking-widest text-center text-ink-quaternary dark:text-ink-dark-quaternary">
-          Move Gently Forward
+          {strings.welcome.tagline}
         </Text>
       </Animated.View>
 
       <Animated.View style={descriptionStyle} className="mb-10">
         <Text className="text-base leading-7 text-center max-w-sm text-ink-secondary dark:text-ink-dark-secondary">
-          {
-            "This is a quiet space for your intentions, kept on your device and available offline. There's nothing to keep up with here. Take things as they come."
-          }
+          {strings.welcome.description}
         </Text>
       </Animated.View>
     </Animated.View>
