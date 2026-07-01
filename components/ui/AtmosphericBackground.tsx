@@ -1,24 +1,19 @@
-import React, { useCallback, useEffect } from 'react';
-import { Dimensions, Platform } from 'react-native';
 import { useColorScheme } from 'nativewind';
-import Svg, { Defs, Filter, FeGaussianBlur, G, Ellipse } from 'react-native-svg';
+import React, { useEffect } from 'react';
+import { Platform } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
   Easing,
-  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
 } from 'react-native-reanimated';
+import Svg, { Defs, Ellipse, FeGaussianBlur, Filter, G } from 'react-native-svg';
 
-const { width: SW, height: SH } = Dimensions.get('window');
-
-function rand(min: number, max: number) {
-  return min + Math.random() * (max - min);
-}
-
-type BlobConfig = {
-  startX: number;
-  startY: number;
+type BlobProps = {
+  left: number;
+  top: number;
   width: number;
   height: number;
   rx: number;
@@ -26,15 +21,15 @@ type BlobConfig = {
   color: string;
   opacity: number;
   blur: number;
-  roamX: number;
-  roamY: number;
-  baseDuration: number;
-  index: number;
+  driftX: number;
+  driftY: number;
+  duration: number;
+  delay: number;
 };
 
 function Blob({
-  startX,
-  startY,
+  left,
+  top,
   width,
   height,
   rx,
@@ -42,49 +37,39 @@ function Blob({
   color,
   opacity,
   blur,
-  roamX,
-  roamY,
-  baseDuration,
-  index,
-}: BlobConfig) {
-  const tx = useSharedValue(0);
-  const ty = useSharedValue(0);
-
-  const filterId = `bf-${index}`;
-  const useFilter = Platform.OS === 'ios';
-
-  const wander = useCallback(() => {
-    const nextX = rand(-roamX, roamX);
-    const nextY = rand(-roamY, roamY);
-    const dur = rand(baseDuration * 0.75, baseDuration * 1.25);
-
-    tx.value = withTiming(nextX, { duration: dur, easing: Easing.inOut(Easing.sin) }, (done) => {
-      if (done) runOnJS(wander)();
-    });
-    ty.value = withTiming(nextY, {
-      duration: rand(baseDuration * 0.6, baseDuration * 1.1),
-      easing: Easing.inOut(Easing.sin),
-    });
-  }, []);
+  driftX,
+  driftY,
+  duration,
+  delay,
+}: BlobProps) {
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    const timer = setTimeout(wander, rand(0, 1500));
-    return () => clearTimeout(timer);
+    progress.value = withDelay(
+      delay,
+      withRepeat(withTiming(1, { duration, easing: Easing.inOut(Easing.sin) }), -1, true)
+    );
   }, []);
 
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: tx.value }, { translateY: ty.value }],
+    transform: [
+      { translateX: (progress.value - 0.5) * driftX * 2 },
+      { translateY: (progress.value - 0.5) * driftY * 2 },
+    ],
   }));
+
+  const filterId = `bf-${left}-${top}`;
+  const useFilter = Platform.OS === 'ios';
 
   return (
     <Animated.View
       pointerEvents="none"
-      style={[{ position: 'absolute', left: startX, top: startY, width, height }, animStyle]}
+      style={[{ position: 'absolute', left, top, width, height }, animStyle]}
     >
       <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         {useFilter && (
           <Defs>
-            <Filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
+            <Filter id={filterId} x="-60%" y="-60%" width="220%" height="220%">
               <FeGaussianBlur stdDeviation={blur} />
             </Filter>
           </Defs>
@@ -100,50 +85,99 @@ function Blob({
 export default function AtmosphericBackground() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const color = isDark ? '#2A2A2A' : '#B8C4B5';
 
-  const blobs: Omit<BlobConfig, 'index'>[] = [
+  const blobColor = isDark ? '#2A2A2A' : '#B8C4B5';
+
+  const blobs: BlobProps[] = [
     {
-      startX: SW * 0.1,
-      startY: SH * 0.1,
-      width: 320,
-      height: 280,
-      rx: 145,
-      ry: 125,
-      color,
+      left: -60,
+      top: 520,
+      width: 500,
+      height: 380,
+      rx: 220,
+      ry: 170,
+      color: blobColor,
+      opacity: isDark ? 0.8 : 0.7,
+      blur: 55,
+      driftX: 8,
+      driftY: 18,
+      duration: 11000,
+      delay: 0,
+    },
+    {
+      left: -80,
+      top: 480,
+      width: 420,
+      height: 340,
+      rx: 190,
+      ry: 155,
+      color: blobColor,
+      opacity: isDark ? 0.65 : 0.55,
+      blur: 50,
+      driftX: 14,
+      driftY: 30,
+      duration: 9400,
+      delay: 600,
+    },
+    {
+      left: 40,
+      top: 340,
+      width: 340,
+      height: 300,
+      rx: 150,
+      ry: 130,
+      color: blobColor,
+      opacity: isDark ? 0.45 : 0.38,
+      blur: 60,
+      driftX: 20,
+      driftY: 24,
+      duration: 13000,
+      delay: 1200,
+    },
+    {
+      left: 100,
+      top: 560,
+      width: 380,
+      height: 320,
+      rx: 170,
+      ry: 145,
+      color: blobColor,
       opacity: isDark ? 0.6 : 0.5,
       blur: 52,
-      roamX: SW * 0.45,
-      roamY: SH * 0.35,
-      baseDuration: 9000,
+      driftX: 10,
+      driftY: 22,
+      duration: 10500,
+      delay: 300,
     },
     {
-      startX: SW * 0.25,
-      startY: SH * 0.4,
-      width: 360,
-      height: 300,
-      rx: 165,
-      ry: 140,
-      color,
-      opacity: isDark ? 0.7 : 0.6,
-      blur: 58,
-      roamX: SW * 0.4,
-      roamY: SH * 0.4,
-      baseDuration: 11000,
+      left: 80,
+      top: 240,
+      width: 280,
+      height: 240,
+      rx: 120,
+      ry: 100,
+      color: blobColor,
+      opacity: isDark ? 0.28 : 0.22,
+      blur: 65,
+      driftX: 24,
+      driftY: 28,
+      duration: 14000,
+      delay: 2000,
     },
     {
-      startX: SW * 0.0,
-      startY: SH * 0.55,
+      left: 180,
+      top: 620,
       width: 300,
       height: 260,
-      rx: 135,
-      ry: 115,
-      color,
+      rx: 130,
+      ry: 110,
+      color: blobColor,
       opacity: isDark ? 0.55 : 0.45,
       blur: 48,
-      roamX: SW * 0.5,
-      roamY: SH * 0.3,
-      baseDuration: 10000,
+      driftX: 12,
+      driftY: 16,
+      duration: 8800,
+      delay: 800,
     },
   ];
 
@@ -153,7 +187,7 @@ export default function AtmosphericBackground() {
       style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
     >
       {blobs.map((blob, i) => (
-        <Blob key={i} {...blob} index={i} />
+        <Blob key={i} {...blob} />
       ))}
     </Animated.View>
   );
