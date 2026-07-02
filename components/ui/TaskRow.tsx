@@ -1,16 +1,27 @@
 import React from 'react';
 import { Feather } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
+import { strings } from '@/constants/strings';
 
 type TaskRowProps = {
   label: string;
   time?: string;
   checked?: boolean;
+  carriedOver?: boolean;
   onPress?: () => void;
   onLongPress?: () => void;
+  onTagPress?: () => void;
 };
 
-export default function TaskRow({ label, time, checked, onPress, onLongPress }: TaskRowProps) {
+export default function TaskRow({
+  label,
+  time,
+  checked,
+  carriedOver,
+  onPress,
+  onLongPress,
+  onTagPress,
+}: TaskRowProps) {
   return (
     <Pressable
       className="flex-row items-center py-[13px]"
@@ -33,6 +44,17 @@ export default function TaskRow({ label, time, checked, onPress, onLongPress }: 
       >
         {label}
       </Text>
+      {carriedOver ? (
+        <Pressable
+          onPress={onTagPress}
+          hitSlop={8}
+          className="ml-3 rounded-full bg-primary/15 px-2.5 py-1"
+        >
+          <Text className="text-[12px] font-medium text-primary">
+            {strings.tasks.carriedOverTag}
+          </Text>
+        </Pressable>
+      ) : null}
       {time ? (
         <Text className="ml-3 text-[17px] text-ink-tertiary dark:text-ink-dark-tertiary">
           {time}

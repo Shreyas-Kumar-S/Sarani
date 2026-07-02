@@ -34,6 +34,7 @@ export const strings = {
   tasks: {
     addCta: '+ Add task',
     newTaskPlaceholder: 'New task',
+    carriedOverTag: 'Undone',
   },
 
   notes: {

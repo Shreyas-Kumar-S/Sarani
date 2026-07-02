@@ -21,3 +21,8 @@ jest.mock("expo-splash-screen", () => ({
   preventAutoHideAsync: jest.fn(),
   hideAsync: jest.fn(),
 }));
+
+// ✅ Mock AsyncStorage with the library's official in-memory jest mock
+jest.mock("@react-native-async-storage/async-storage", () =>
+  require("@react-native-async-storage/async-storage/jest/async-storage-mock")
+);

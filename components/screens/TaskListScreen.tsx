@@ -17,6 +17,7 @@ type TaskListScreenProps = {
   onAddTask?: (label: string) => void;
   onToggleTask?: (sectionIndex: number, itemIndex: number) => void;
   onRemoveTask?: (sectionIndex: number, itemIndex: number) => void;
+  onPromoteTask?: (sectionIndex: number, itemIndex: number) => void;
 };
 
 export default function TaskListScreen({
@@ -28,6 +29,7 @@ export default function TaskListScreen({
   onAddTask,
   onToggleTask,
   onRemoveTask,
+  onPromoteTask,
 }: TaskListScreenProps) {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [draftTask, setDraftTask] = useState('');
@@ -76,9 +78,13 @@ export default function TaskListScreen({
                       label={item.label}
                       time={item.time}
                       checked={item.checked}
+                      carriedOver={item.carriedOver}
                       onPress={onToggleTask ? () => onToggleTask(sectionIndex, index) : undefined}
                       onLongPress={
                         onRemoveTask ? () => onRemoveTask(sectionIndex, index) : undefined
+                      }
+                      onTagPress={
+                        onPromoteTask ? () => onPromoteTask(sectionIndex, index) : undefined
                       }
                     />
                   </View>
