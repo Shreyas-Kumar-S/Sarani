@@ -55,6 +55,22 @@ describe('TaskStore', () => {
     });
   });
 
+  it('editTask rewrites a task label in place', async () => {
+    await seed({
+      tasksByTab: { today: [{ label: 'old words', checked: false }], upcoming: [], someday: [] },
+      lastOpenedDate: todayString(),
+    });
+
+    const { result } = renderHook(useBoth, { wrapper });
+    await waitFor(() => expect(result.current.today.tasks).toHaveLength(1));
+
+    act(() => {
+      result.current.today.editTask(0, 0, 'new words');
+    });
+
+    expect(result.current.today.tasks).toEqual([{ label: 'new words', checked: false }]);
+  });
+
   it('promoteTask moves a Today task to Upcoming and clears the carriedOver flag', async () => {
     await seed({
       tasksByTab: {

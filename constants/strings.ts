@@ -12,7 +12,7 @@ export const strings = {
     today: 'Today',
     upcoming: 'Upcoming',
     someday: 'Someday',
-    lists: 'Lists',
+    lists: 'Notes',
   },
 
   today: {
@@ -41,9 +41,20 @@ export const strings = {
     title: 'Notes',
     intro: 'Get thoughts out of your head\nand breathe a little easier',
     newNoteCta: '+ New note',
+    newNotePlaceholder: 'A passing thought',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    empty: 'Nothing here yet.\nWrite something small.',
+  },
+
+  actions: {
+    letItGo: 'Let it go',
   },
 
   a11y: {
     toggleTheme: 'Toggle color theme',
+    commitTask: 'Add this task',
+    commitNote: 'Add this note',
+    commitEdit: 'Save changes',
   },
 } as const;

@@ -46,8 +46,8 @@ export const SplashLogoLight: React.FC<SplashLogoProps> = ({ width = 350, height
     textOpacity.value = withDelay(1600, withTiming(1, { duration: 900 }));
     taglineOpacity.value = withDelay(2100, withTiming(1, { duration: 1000 }));
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // All are stable reanimated shared values, so the draw-in runs once.
+  }, [progress, strokeWidth, textOpacity, taglineOpacity]);
 
   const pathAnimatedProps = useAnimatedProps(() => {
     const strokeDashoffset = PATH_LENGTH * (1 - progress.value);
@@ -130,8 +130,8 @@ export const SplashLogoDark: React.FC<SplashLogoProps> = ({ width = 350, height 
     textOpacity.value = withDelay(1600, withTiming(1, { duration: 900 }));
     taglineOpacity.value = withDelay(2100, withTiming(1, { duration: 1000 }));
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // All are stable reanimated shared values, so the draw-in runs once.
+  }, [progress, strokeWidth, textOpacity, taglineOpacity]);
   const pathAnimatedProps = useAnimatedProps(() => {
     const strokeDashoffset = PATH_LENGTH * (1 - progress.value);
     return {

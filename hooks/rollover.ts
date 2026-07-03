@@ -19,9 +19,13 @@ export function applyDailyRollover(
     return { tasksByTab, changed: false };
   }
 
-  const rolledToday = tasksByTab.today
-    .filter((task) => !task.checked)
-    .map((task) => ({ ...task, carriedOver: true }));
+  // Single pass: drop completed tasks and flag the survivors as carried over.
+  const rolledToday = tasksByTab.today.reduce<TaskItem[]>((survivors, task) => {
+    if (!task.checked) {
+      survivors.push({ ...task, carriedOver: true });
+    }
+    return survivors;
+  }, []);
 
   return {
     tasksByTab: { ...tasksByTab, today: rolledToday },

@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
+import ReanimatedSwipeable, {
+  SwipeableMethods,
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { RowDeleteAction } from './RowActions';
 import { strings } from '@/constants/strings';
 
 type TaskRowProps = {
@@ -8,27 +12,39 @@ type TaskRowProps = {
   time?: string;
   checked?: boolean;
   carriedOver?: boolean;
-  onPress?: () => void;
-  onLongPress?: () => void;
+  onToggle?: () => void;
+  onLabelPress?: () => void;
+  onDelete?: () => void;
   onTagPress?: () => void;
 };
 
+// Row gesture language (app-wide): tap the checkbox to complete, tap the text
+// to edit, swipe left to let go.
 export default function TaskRow({
   label,
   time,
   checked,
   carriedOver,
-  onPress,
-  onLongPress,
+  onToggle,
+  onLabelPress,
+  onDelete,
   onTagPress,
 }: TaskRowProps) {
-  return (
-    <Pressable
-      className="flex-row items-center py-[13px]"
-      onPress={onPress}
-      onLongPress={onLongPress}
-    >
-      <View
+  const swipeRef = useRef<SwipeableMethods>(null);
+
+  const closeThen = (action: () => void) => () => {
+    swipeRef.current?.close();
+    action();
+  };
+
+  const row = (
+    <View className="flex-row items-center py-[13px]">
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: Boolean(checked) }}
+        accessibilityLabel={label}
+        onPress={onToggle}
+        hitSlop={10}
         className={`mr-4 h-5 w-5 items-center justify-center rounded-full border ${
           checked
             ? 'bg-primary border-primary'
@@ -36,14 +52,16 @@ export default function TaskRow({
         }`}
       >
         {checked ? <Feather name="check" size={14} color="#F6F2EC" /> : null}
-      </View>
-      <Text
-        className={`flex-1 text-[21px] leading-7 text-ink-secondary dark:text-ink-dark-secondary ${
-          checked ? 'line-through opacity-55' : ''
-        }`}
-      >
-        {label}
-      </Text>
+      </Pressable>
+      <Pressable className="flex-1" onPress={onLabelPress}>
+        <Text
+          className={`text-[21px] leading-7 text-ink-secondary dark:text-ink-dark-secondary ${
+            checked ? 'line-through opacity-55' : ''
+          }`}
+        >
+          {label}
+        </Text>
+      </Pressable>
       {carriedOver ? (
         <Pressable
           onPress={onTagPress}
@@ -60,6 +78,21 @@ export default function TaskRow({
           {time}
         </Text>
       ) : null}
-    </Pressable>
+    </View>
+  );
+
+  if (!onDelete) {
+    return row;
+  }
+
+  return (
+    <ReanimatedSwipeable
+      ref={swipeRef}
+      friction={2}
+      overshootFriction={8}
+      renderRightActions={() => <RowDeleteAction onDelete={closeThen(onDelete)} />}
+    >
+      {row}
+    </ReanimatedSwipeable>
   );
 }

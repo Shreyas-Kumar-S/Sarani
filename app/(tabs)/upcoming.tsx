@@ -4,7 +4,7 @@ import { strings } from '@/constants/strings';
 import { useTaskList } from '@/hooks/TaskStore';
 
 export default function UpcomingScreen() {
-  const { tasks, addTask, toggleTask, removeTask } = useTaskList('upcoming');
+  const { tasks, addTask, toggleTask, removeTask, editTask } = useTaskList('upcoming');
 
   return (
     <TaskListScreen
@@ -15,6 +15,7 @@ export default function UpcomingScreen() {
       onAddTask={addTask}
       onToggleTask={toggleTask}
       onRemoveTask={removeTask}
+      onEditTask={editTask}
     />
   );
 }

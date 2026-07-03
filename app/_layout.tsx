@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import FloatingThemeToggle from '@/components/FloatingThemeToggle';
+import SplashScreen from '@/components/SplashScreen';
+import WelcomeCurtain from '@/components/WelcomeCurtain';
+import { AppRevealProvider } from '@/hooks/AppReveal';
 import { Stack } from 'expo-router';
 import * as SplashScreenExpo from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
+import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Easing, runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import SplashScreen from '@/components/SplashScreen';
-import WelcomeCurtain from '@/components/WelcomeCurtain';
-import FloatingThemeToggle from '@/components/FloatingThemeToggle';
 import '../global.css';
 
 SplashScreenExpo.preventAutoHideAsync();
@@ -29,9 +31,12 @@ export default function RootLayout() {
   const dock = useSharedValue(0);
 
   useEffect(() => {
+    let warmupTimer: ReturnType<typeof setTimeout>;
     async function prepare() {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise((resolve) => {
+          warmupTimer = setTimeout(resolve, 100);
+        });
       } catch (e) {
         console.warn('Error loading resources:', e);
       } finally {
@@ -40,6 +45,7 @@ export default function RootLayout() {
       }
     }
     prepare();
+    return () => clearTimeout(warmupTimer);
   }, []);
 
   // Once the welcome content has settled, glide the toggle to the corner while the
@@ -57,33 +63,38 @@ export default function RootLayout() {
       );
     }, WELCOME_HOLD_MS);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
+    // dock/curtainOpacity are reanimated shared values with stable identity, so
+    // including them keeps this effect running only when the phase changes.
+  }, [phase, dock, curtainOpacity]);
 
   if (!appIsReady) return null;
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      {phase === 'splash' ? (
-        <SplashScreen onFinish={() => setPhase('welcome')} />
-      ) : (
-        <View style={{ flex: 1 }}>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: {
-                backgroundColor: colorScheme === 'dark' ? '#141414' : '#FAF8F5',
-              },
-            }}
-          >
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(tabs)" />
-          </Stack>
-          {phase === 'welcome' ? <WelcomeCurtain curtainOpacity={curtainOpacity} /> : null}
-          <FloatingThemeToggle dock={dock} />
-        </View>
-      )}
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        {phase === 'splash' ? (
+          <SplashScreen onFinish={() => setPhase('welcome')} />
+        ) : (
+          <AppRevealProvider revealed={phase === 'app'}>
+            <View style={{ flex: 1 }}>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: {
+                    backgroundColor: colorScheme === 'dark' ? '#141414' : '#FAF8F5',
+                  },
+                }}
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(tabs)" />
+              </Stack>
+              {phase === 'welcome' ? <WelcomeCurtain curtainOpacity={curtainOpacity} /> : null}
+              <FloatingThemeToggle dock={dock} />
+            </View>
+          </AppRevealProvider>
+        )}
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

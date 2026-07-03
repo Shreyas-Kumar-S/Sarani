@@ -1,10 +1,10 @@
 import React, {
   createContext,
   ReactNode,
+  use,
   useCallback,
-  useContext,
   useEffect,
-  useRef,
+  useMemo,
   useState,
 } from 'react';
 import { TaskItem } from '@/types/task';
@@ -18,6 +18,7 @@ type TaskStore = {
   addTask: (tab: TabKey, label: string) => void;
   toggleTask: (tab: TabKey, itemIndex: number) => void;
   removeTask: (tab: TabKey, itemIndex: number) => void;
+  editTask: (tab: TabKey, itemIndex: number, label: string) => void;
   promoteToUpcoming: (itemIndex: number) => void;
 };
 
@@ -36,7 +37,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   // completes — `hydrated` gates the persist effect until it does.
   const [hydrated, setHydrated] = useState(false);
   // One local date for the whole session — drives the rollover comparison.
-  const today = useRef(todayString()).current;
+  // Lazy state initializer so todayString() runs once, not on every render.
+  const [today] = useState(todayString);
 
   // Load once on mount: read saved state, apply the daily rollover, adopt it,
   // then record the rolled result + today's date so the rollover isn't redone
@@ -92,6 +94,13 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     setTasksByTab((prev) => ({ ...prev, [tab]: prev[tab].filter((_, i) => i !== itemIndex) }));
   }, []);
 
+  const editTask = useCallback((tab: TabKey, itemIndex: number, label: string) => {
+    setTasksByTab((prev) => ({
+      ...prev,
+      [tab]: prev[tab].map((task, i) => (i === itemIndex ? { ...task, label } : task)),
+    }));
+  }, []);
+
   // Move a carried-over Today task into Upcoming, shedding the carriedOver flag.
   const promoteToUpcoming = useCallback((itemIndex: number) => {
     setTasksByTab((prev) => {
@@ -109,17 +118,16 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  return (
-    <TaskContext.Provider
-      value={{ tasksByTab, addTask, toggleTask, removeTask, promoteToUpcoming }}
-    >
-      {children}
-    </TaskContext.Provider>
+  const value = useMemo(
+    () => ({ tasksByTab, addTask, toggleTask, removeTask, editTask, promoteToUpcoming }),
+    [tasksByTab, addTask, toggleTask, removeTask, editTask, promoteToUpcoming]
   );
+
+  return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
 }
 
 function useTaskStore() {
-  const store = useContext(TaskContext);
+  const store = use(TaskContext);
   if (!store) {
     throw new Error('Task hooks must be used within a <TaskProvider>');
   }
@@ -128,12 +136,15 @@ function useTaskStore() {
 
 // Screen-facing hook — mirrors the section/item signature TaskListScreen expects.
 export function useTaskList(tab: TabKey) {
-  const { tasksByTab, addTask, toggleTask, removeTask, promoteToUpcoming } = useTaskStore();
+  const { tasksByTab, addTask, toggleTask, removeTask, editTask, promoteToUpcoming } =
+    useTaskStore();
   return {
     tasks: tasksByTab[tab],
     addTask: (label: string) => addTask(tab, label),
     toggleTask: (_sectionIndex: number, itemIndex: number) => toggleTask(tab, itemIndex),
     removeTask: (_sectionIndex: number, itemIndex: number) => removeTask(tab, itemIndex),
+    editTask: (_sectionIndex: number, itemIndex: number, label: string) =>
+      editTask(tab, itemIndex, label),
     // Only meaningful on the Today tab; other tabs simply never wire it.
     promoteTask: (itemIndex: number) => promoteToUpcoming(itemIndex),
   };

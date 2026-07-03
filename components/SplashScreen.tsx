@@ -31,8 +31,8 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         }
       })
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // containerOpacity is a stable reanimated shared value; the fade runs once.
+  }, [containerOpacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: containerOpacity.value,

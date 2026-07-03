@@ -1,6 +1,6 @@
 import { useColorScheme } from 'nativewind';
 import React, { useEffect } from 'react';
-import { Text, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { Pressable, Text, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   interpolate,
@@ -39,8 +39,8 @@ export default function FloatingThemeToggle({ dock }: FloatingThemeToggleProps) 
       1200,
       withTiming(1, { duration: 500, easing: Easing.out(Easing.back(1.5)) })
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // intro is a stable reanimated shared value, so the entrance runs once.
+  }, [intro]);
 
   // Resting (docked) centre vs. welcome centre — the delta is how far it travels.
   const dockedCenterX = screenW - CORNER_RIGHT - SIZE / 2;
@@ -74,15 +74,15 @@ export default function FloatingThemeToggle({ dock }: FloatingThemeToggleProps) 
         style,
       ]}
     >
-      <TouchableOpacity
+      <Pressable
         onPress={toggleColorScheme}
-        activeOpacity={0.6}
+        style={({ pressed }) => (pressed ? { opacity: 0.6 } : null)}
         hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel={strings.a11y.toggleTheme}
       >
         <Text style={{ fontSize: 14 }}>{colorScheme === 'dark' ? '🌙' : '☀️'}</Text>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 }

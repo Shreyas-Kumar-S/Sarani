@@ -49,7 +49,8 @@ function Blob({
       delay,
       withRepeat(withTiming(1, { duration, easing: Easing.inOut(Easing.sin) }), -1, true)
     );
-  }, []);
+    // progress is a stable shared value; delay/duration are constant props.
+  }, [progress, delay, duration]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [
@@ -186,8 +187,8 @@ export default function AtmosphericBackground() {
       pointerEvents="none"
       style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
     >
-      {blobs.map((blob, i) => (
-        <Blob key={i} {...blob} />
+      {blobs.map((blob) => (
+        <Blob {...blob} key={`blob-${blob.left}-${blob.top}-${blob.duration}`} />
       ))}
     </Animated.View>
   );

@@ -1,14 +1,19 @@
 import React from 'react';
 import NotesScreen from '@/components/screens/NotesScreen';
 import { strings } from '@/constants/strings';
-import { notesBlocks } from '@/data/mock/notes';
+import { useNotes } from '@/hooks/NoteStore';
 
-export default function ListsScreen() {
+export default function NotesTabScreen() {
+  const { notes, addNote, editNote, deleteNote } = useNotes();
+
   return (
     <NotesScreen
       title={strings.notes.title}
-      blocks={notesBlocks}
+      notes={notes}
       ctaLabel={strings.notes.newNoteCta}
+      onAddNote={addNote}
+      onEditNote={editNote}
+      onDeleteNote={deleteNote}
     />
   );
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TouchableOpacity } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
 type PrimaryButtonProps = {
   label: string;
@@ -18,12 +18,12 @@ export default function PrimaryButton({ label, variant = 'default', onPress }: P
       : 'text-[18px] text-ink-secondary dark:text-ink-dark-secondary';
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
+    <Pressable
       onPress={onPress}
+      style={({ pressed }) => (pressed ? { opacity: 0.8 } : null)}
       className={`items-center justify-center rounded-full ${buttonClass}`}
     >
       <Text className={textClass}>{label}</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 }

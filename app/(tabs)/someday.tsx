@@ -4,7 +4,7 @@ import { strings } from '@/constants/strings';
 import { useTaskList } from '@/hooks/TaskStore';
 
 export default function SomedayScreen() {
-  const { tasks, addTask, toggleTask, removeTask } = useTaskList('someday');
+  const { tasks, addTask, toggleTask, removeTask, editTask } = useTaskList('someday');
 
   return (
     <TaskListScreen
@@ -15,6 +15,7 @@ export default function SomedayScreen() {
       onAddTask={addTask}
       onToggleTask={toggleTask}
       onRemoveTask={removeTask}
+      onEditTask={editTask}
     />
   );
 }

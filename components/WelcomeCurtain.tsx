@@ -36,8 +36,8 @@ export default function WelcomeCurtain({ curtainOpacity }: WelcomeCurtainProps) 
     taglineY.value = withDelay(400, withTiming(0, { ...ENTER, duration: 600 }));
     descriptionOpacity.value = withDelay(800, withTiming(1, { ...ENTER, duration: 700 }));
     descriptionY.value = withDelay(800, withTiming(0, { ...ENTER, duration: 700 }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // All are stable reanimated shared values, so the staggered entrance runs once.
+  }, [titleOpacity, titleY, taglineOpacity, taglineY, descriptionOpacity, descriptionY]);
 
   const containerStyle = useAnimatedStyle(() => ({ opacity: curtainOpacity.value }));
   const titleStyle = useAnimatedStyle(() => ({
