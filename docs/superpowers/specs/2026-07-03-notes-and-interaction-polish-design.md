@@ -4,9 +4,28 @@
 **Status:** Approved direction (brainstorm with founder)
 **Parent:** 2026-07-02-product-roadmap-design.md (v1 scope)
 
-Three pieces of v1 work: making the Notes tab real, fixing the add-task
-flow's missing confirmation affordance, and giving the tab bar an entrance
+Four pieces of v1 work: making the Notes tab real, fixing the add-task
+flow's missing confirmation affordance, replacing long-press with a
+discoverable row-interaction model, and giving the tab bar an entrance
 animation. They share a theme — the app should visibly respond to the user.
+
+## 0. Row interaction model (app-wide gesture language)
+
+One gesture language for task rows and note rows. Long-press retires
+entirely — it was invisible and destructively wired (instant delete).
+
+- **Tap the checkbox** → toggle complete (tasks only). The tap target is
+  the box plus comfortable padding, no longer the whole row.
+- **Tap the text** → edit inline; the row swaps to a TextInput with the
+  same commit-button treatment as adding.
+- **Swipe left** → reveals **Let it go** (delete). Nothing fires from the
+  blind gesture — the swipe reveals a button, tapping it confirms.
+- **Swipe right** → reveals constructive actions: for tasks, **Move**
+  (small sheet: Today / Upcoming / Someday); for notes, **Keep** and
+  **Set it in motion**.
+
+Implementation: `ReanimatedSwipeable` from react-native-gesture-handler
+(already a dependency), so swipe reveals animate on the UI thread.
 
 ## 1. Notes tab — "a quiet daily stream"
 
@@ -19,7 +38,7 @@ under the day they were written, reading like a soft journal.
 
 ### Kept notes
 
-Any note can be **kept** (long-press → "Keep"). Kept notes float in a
+Any note can be **kept** (swipe right → "Keep"). Kept notes float in a
 timeless section above the day stream — where a quote lives unburied.
 Everything else stays anchored to its day. Two states, one gesture.
 
@@ -56,9 +75,9 @@ Mirrors the task layer exactly:
 - **Kept** section on top, rendered only when non-empty.
 - Day sections below — *Today*, *Yesterday*, then dates — newest first.
 - "New note" CTA opens an inline composer (same pattern as
-  TaskListScreen's inline add); tap a note to edit in place.
-- Long-press a note → three actions: **Keep** (toggle), **Set it in
-  motion** (convert to task), **Let it go** (delete).
+  TaskListScreen's inline add); tap a note's text to edit in place.
+- Row actions follow the app-wide gesture language (§0): swipe right →
+  **Keep** (toggle) / **Set it in motion**; swipe left → **Let it go**.
 - First run: empty, with one gentle empty-state line.
 - `data/mock/notes.ts` retires.
 
@@ -128,12 +147,17 @@ consistent.
 - Unit: note day-grouping, note storage round-trip, note → task
   conversion.
 - Component: add note → keep → convert flow; add-task commit button
-  enables/disables with draft text; task submit keeps input open.
+  enables/disables with draft text; task submit keeps input open;
+  checkbox tap toggles while text tap enters edit; swipe actions call
+  the right handlers.
 - Animation logic (trigger-once-per-launch) verified manually; no
   snapshot of animated frames.
 
 ## Build order
 
 1. Add-task commit UX (smallest, no new infrastructure)
-2. Tab bar entrance (small, isolated to layouts)
-3. Notes tab (meatiest: types, storage, store, screen, bridge)
+2. Row interaction model on task rows (split-tap, swipe, inline edit —
+   retires long-press)
+3. Tab bar entrance (small, isolated to layouts)
+4. Notes tab (meatiest: types, storage, store, screen, bridge — reuses
+   the row gestures from step 2)
