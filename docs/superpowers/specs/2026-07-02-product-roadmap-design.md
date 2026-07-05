@@ -40,9 +40,9 @@ Table stakes (each missing one costs stars in reviews):
 5. **Privacy-promise onboarding** — three calm intro screens ending with
    "No account. No cloud. Yours."
 6. **Developers section** — a quiet "from the maker" note + a "what's coming"
-   list. Shipped static in-app (updated per release); adds soul and a reason
-   to reopen. v1.5 may switch the content to a static remote JSON so it
-   updates without an app release.
+   list. Content sourced from Sanity (see Infrastructure), with baked-in
+   fallback so it works offline / on first launch. Adds soul and a reason to
+   reopen; shares the same fetch as force-update.
 
 **Signature feature: Evening wind-down ritual.**
 At a user-chosen hour, one soft notification: *"Want to set tomorrow down
@@ -58,6 +58,23 @@ forward), AsyncStorage persistence, per-tab TaskStore, haptics, Notes journal
 icons + splash, EAS build profiles, store listings + screenshots, privacy
 policy (Apple requires one even offline), an error boundary, real-device pass,
 accessibility sweep.
+
+**Infrastructure & production tooling (founder decisions 2026-07-03):**
+
+- **Sanity CMS (free tier)** — the app's read-only content/config source, NOT
+  user data (todos stay local). One `appConfig` doc drives force-update, plus
+  `devNotes` / `pipeline` for the Developers section and update messages.
+  Fetched on launch via the cached CDN endpoint; app ships baked-in fallback
+  content and degrades gracefully offline (cache last-known, never hang/block
+  on a failed fetch).
+- **Force-update / update-nudge / announcement modals** — pure JS: compare the
+  running version (`expo-application`) against Sanity's `minSupportedVersion`
+  (blocking) / `latestVersion` (dismissible nudge). No native module; works in
+  Expo Go. NOT a Sentry feature — Sentry is crash-only.
+- **Sentry (free Developer plan)** — crash/error reporting. Expo config plugin;
+  dev continues in Expo Go, telemetry captured in EAS/production builds. Chosen
+  over Firebase Crashlytics to avoid a mandatory custom dev client and Google
+  dependency; Firebase Remote Config is redundant given the Sanity config.
 
 **Around launch (small, separate from the app):** a **marketing landing site**
 (`serein.app` — hero, screenshots, download links, privacy promise, public
