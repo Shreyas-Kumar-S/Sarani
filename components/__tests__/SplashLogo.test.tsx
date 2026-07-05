@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { SplashLogoLight, SplashLogoDark } from '../Splashlogo';
+import { SplashLogoLight, SplashLogoDark } from '../SplashLogo';
 
 describe('SplashLogo', () => {
   describe('SplashLogoLight', () => {

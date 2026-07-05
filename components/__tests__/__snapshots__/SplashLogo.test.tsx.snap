@@ -92,9 +92,9 @@ exports[`SplashLogo SplashLogoDark matches snapshot (dark mode) 1`] = `
       }
       font={
         {
-          "fontFamily": "system-ui",
-          "fontSize": "68",
-          "letterSpacing": "1",
+          "fontFamily": "Georgia",
+          "fontSize": "104",
+          "letterSpacing": "2",
           "textAnchor": "middle",
         }
       }
@@ -111,12 +111,12 @@ exports[`SplashLogo SplashLogoDark matches snapshot (dark mode) 1`] = `
       }
       y={
         [
-          "850",
+          "844",
         ]
       }
     >
       <RNSVGTSpan
-        content="Serein"
+        content="serein"
         dx={[]}
         dy={[]}
         fill={
@@ -143,8 +143,8 @@ exports[`SplashLogo SplashLogoDark matches snapshot (dark mode) 1`] = `
       }
       font={
         {
-          "fontFamily": "system-ui",
-          "fontSize": "34",
+          "fontFamily": "Georgia",
+          "fontSize": "32",
           "textAnchor": "middle",
         }
       }
@@ -161,12 +161,12 @@ exports[`SplashLogo SplashLogoDark matches snapshot (dark mode) 1`] = `
       }
       y={
         [
-          "910",
+          "895",
         ]
       }
     >
       <RNSVGTSpan
-        content="Move Gently Forward"
+        content="move gently forward"
         dx={[]}
         dy={[]}
         fill={
@@ -271,15 +271,15 @@ exports[`SplashLogo SplashLogoLight matches snapshot (light mode) 1`] = `
       dy={[]}
       fill={
         {
-          "payload": 4282006074,
+          "payload": 4285498752,
           "type": 0,
         }
       }
       font={
         {
-          "fontFamily": "system-ui",
-          "fontSize": "68",
-          "letterSpacing": "1",
+          "fontFamily": "Georgia",
+          "fontSize": "104",
+          "letterSpacing": "2",
           "textAnchor": "middle",
         }
       }
@@ -296,12 +296,12 @@ exports[`SplashLogo SplashLogoLight matches snapshot (light mode) 1`] = `
       }
       y={
         [
-          "850",
+          "844",
         ]
       }
     >
       <RNSVGTSpan
-        content="Serein"
+        content="serein"
         dx={[]}
         dy={[]}
         fill={
@@ -322,14 +322,14 @@ exports[`SplashLogo SplashLogoLight matches snapshot (light mode) 1`] = `
       dy={[]}
       fill={
         {
-          "payload": 4286225270,
+          "payload": 4285498752,
           "type": 0,
         }
       }
       font={
         {
-          "fontFamily": "system-ui",
-          "fontSize": "34",
+          "fontFamily": "Georgia",
+          "fontSize": "32",
           "textAnchor": "middle",
         }
       }
@@ -346,12 +346,12 @@ exports[`SplashLogo SplashLogoLight matches snapshot (light mode) 1`] = `
       }
       y={
         [
-          "910",
+          "875",
         ]
       }
     >
       <RNSVGTSpan
-        content="Move Gently Forward"
+        content="move gently forward"
         dx={[]}
         dy={[]}
         fill={

@@ -2,25 +2,36 @@
   "expo": {
     "name": "Serein",
     "slug": "serein",
+    "scheme": "serein",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icons/app-icon.png",
+    "icon": {
+      "light": "./assets/icons/app-icon-light.png",
+      "dark": "./assets/icons/app-icon-dark.png"
+    },
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/icons/app-icon.png",
+      "image": "./assets/icons/app-icon-light.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FAF8F5"
+      "backgroundColor": "#FAF8F5",
+      "dark": {
+        "image": "./assets/icons/app-icon-dark.png",
+        "backgroundColor": "#141414"
+      }
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.serein"
+      "bundleIdentifier": "com.shreyas.serein",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icons/app-icon.png",
+        "foregroundImage": "./assets/icons/app-icon-light.png",
         "backgroundColor": "#FAF8F5"
       },
-      "package": "com.yourcompany.serein"
+      "package": "com.shreyas.serein"
     },
     "web": {
       "favicon": "./assets/icons/app-icon.png"
@@ -30,13 +41,22 @@
       [
         "expo-splash-screen",
         {
+          "image": "./assets/icons/app-icon-light.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#FAF8F5"
+          "backgroundColor": "#FAF8F5",
+          "dark": { "image": "./assets/icons/app-icon-dark.png", "backgroundColor": "#141414" }
         }
       ],
       "expo-font",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c71c750c-b0a1-4b4b-beb5-77fae3f62c8b"
+      }
+    },
+    "owner": "shreyasice"
   }
 }
