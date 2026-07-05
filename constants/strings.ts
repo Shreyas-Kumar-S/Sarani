@@ -62,5 +62,8 @@ export const strings = {
     blockedTitle: 'Time for a fresh start',
     blockedBody: 'This version has gently retired. Update to keep moving forward.',
     button: 'Update Serein',
+    nudgeTitle: 'A new version is gently waiting',
+    nudgeBody: "When you have a moment, there's a fresh update for Serein.",
+    later: 'Later',
   },
 } as const;
