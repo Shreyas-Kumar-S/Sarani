@@ -4,11 +4,12 @@ import { useAppConfig } from '@/hooks/AppConfigStore';
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/constants/appConfig';
 import { strings } from '@/constants/strings';
 
+// Doesn't use component state, so it lives at module scope rather than being
+// rebuilt on every render.
+const openStore = () => Linking.openURL(Platform.OS === 'ios' ? APP_STORE_URL : PLAY_STORE_URL);
+
 export function UpdateGate({ children }: { children: ReactNode }) {
   const { updateState, config } = useAppConfig();
-
-  const openStore = () =>
-    Linking.openURL(Platform.OS === 'ios' ? APP_STORE_URL : PLAY_STORE_URL);
 
   return (
     <>

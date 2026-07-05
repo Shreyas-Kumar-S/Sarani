@@ -1,6 +1,9 @@
+import { AnnouncementModal } from '@/components/AnnouncementModal';
 import FloatingThemeToggle from '@/components/FloatingThemeToggle';
 import SplashScreen from '@/components/SplashScreen';
+import { UpdateGate } from '@/components/UpdateGate';
 import WelcomeCurtain from '@/components/WelcomeCurtain';
+import { AppConfigProvider } from '@/hooks/AppConfigStore';
 import { AppRevealProvider } from '@/hooks/AppReveal';
 import { Stack } from 'expo-router';
 import * as SplashScreenExpo from 'expo-splash-screen';
@@ -72,28 +75,35 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        {phase === 'splash' ? (
-          <SplashScreen onFinish={() => setPhase('welcome')} />
-        ) : (
-          <AppRevealProvider revealed={phase === 'app'}>
-            <View style={{ flex: 1 }}>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: {
-                    backgroundColor: colorScheme === 'dark' ? '#141414' : '#FAF8F5',
-                  },
-                }}
-              >
-                <Stack.Screen name="index" />
-                <Stack.Screen name="(tabs)" />
-              </Stack>
-              {phase === 'welcome' ? <WelcomeCurtain curtainOpacity={curtainOpacity} /> : null}
-              <FloatingThemeToggle dock={dock} />
-            </View>
-          </AppRevealProvider>
-        )}
+        <AppConfigProvider>
+          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+          <UpdateGate>
+            {phase === 'splash' ? (
+              <SplashScreen onFinish={() => setPhase('welcome')} />
+            ) : (
+              <AppRevealProvider revealed={phase === 'app'}>
+                <View style={{ flex: 1 }}>
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      contentStyle: {
+                        backgroundColor: colorScheme === 'dark' ? '#141414' : '#FAF8F5',
+                      },
+                    }}
+                  >
+                    <Stack.Screen name="index" />
+                    <Stack.Screen name="(tabs)" />
+                  </Stack>
+                  {phase === 'welcome' ? (
+                    <WelcomeCurtain curtainOpacity={curtainOpacity} />
+                  ) : null}
+                  <FloatingThemeToggle dock={dock} />
+                </View>
+              </AppRevealProvider>
+            )}
+          </UpdateGate>
+          <AnnouncementModal />
+        </AppConfigProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
