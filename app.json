@@ -5,12 +5,19 @@
     "scheme": "serein",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icons/app-icon.png",
+    "icon": {
+      "light": "./assets/icons/app-icon-light.png",
+      "dark": "./assets/icons/app-icon-dark.png"
+    },
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/icons/app-icon.png",
+      "image": "./assets/icons/app-icon-light.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FAF8F5"
+      "backgroundColor": "#FAF8F5",
+      "dark": {
+        "image": "./assets/icons/app-icon-dark.png",
+        "backgroundColor": "#141414"
+      }
     },
     "ios": {
       "supportsTablet": true,
@@ -21,7 +28,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icons/app-icon.png",
+        "foregroundImage": "./assets/icons/app-icon-light.png",
         "backgroundColor": "#FAF8F5"
       },
       "package": "com.shreyas.serein"
@@ -34,10 +41,11 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/icons/app-icon.png",
+          "image": "./assets/icons/app-icon-light.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#FAF8F5"
+          "backgroundColor": "#FAF8F5",
+          "dark": { "image": "./assets/icons/app-icon-dark.png", "backgroundColor": "#141414" }
         }
       ],
       "expo-font",
