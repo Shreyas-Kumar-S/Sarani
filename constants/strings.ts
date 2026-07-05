@@ -57,4 +57,10 @@ export const strings = {
     commitNote: 'Add this note',
     commitEdit: 'Save changes',
   },
+
+  update: {
+    blockedTitle: 'Time for a fresh start',
+    blockedBody: 'This version has gently retired. Update to keep moving forward.',
+    button: 'Update Serein',
+  },
 } as const;
