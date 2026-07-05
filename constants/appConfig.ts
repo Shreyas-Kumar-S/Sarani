@@ -1,4 +1,4 @@
-export const SANITY_PROJECT_ID = 'REPLACE_WITH_PROJECT_ID';
+export const SANITY_PROJECT_ID = 'q7x4fyiu';
 export const SANITY_DATASET = 'production';
 export const SANITY_API_VERSION = '2024-01-01';
 
