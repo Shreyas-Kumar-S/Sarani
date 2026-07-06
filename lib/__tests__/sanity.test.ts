@@ -20,6 +20,18 @@ describe('fetchAppConfig', () => {
     expect(await fetchAppConfig()).toBeNull();
   });
 
+  it('normalizes null/missing version fields to safe defaults (never yields null versions)', async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: { result: { minSupportedVersion: null, latestVersion: null, devNote: 'hi' } },
+    });
+
+    expect(await fetchAppConfig()).toEqual({
+      minSupportedVersion: '0.0.0',
+      latestVersion: '1.0.0',
+      devNote: 'hi',
+    });
+  });
+
   it('returns null when the request throws (offline or non-2xx)', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
     mockedAxios.get.mockRejectedValue(new Error('offline'));
