@@ -13,4 +13,8 @@ describe('compareVersions', () => {
   it('tolerates differing segment counts', () => {
     expect(compareVersions('1.2', '1.2.0')).toBe(0);
   });
+  it('does not throw on null/undefined input (defensive — treats as empty)', () => {
+    expect(compareVersions('1.0.0', null as unknown as string)).toBe(1);
+    expect(compareVersions(undefined as unknown as string, '1.0.0')).toBe(-1);
+  });
 });
