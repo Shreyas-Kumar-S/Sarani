@@ -29,13 +29,13 @@ module.exports = {
           nav: "hsla(35, 28%, 97%, 1)",
         },
 
-        /* Dark Mode Surfaces */
+        /* Dark Mode Surfaces — near-black ramp with subtle layering */
         'surface-dark': {
-          page: "hsla(0, 0%, 8%, 1)",
-          primary: "hsla(0, 0%, 10%, 1)",
-          secondary: "hsla(0, 0%, 12%, 1)",
-          inset: "hsla(120, 5%, 14%, 1)",
-          nav: "hsla(0, 0%, 10%, 1)",
+          page: "black",
+          primary: "hsla(0, 0%, 2%, 1)",
+          secondary: "hsla(0, 0%,2%, 1)",
+          inset: "hsla(120, 5%, 10%, 1)",
+          nav: "hsla(0, 0%, 6%, 1)",
         },
 
         /* Light Mode Text */

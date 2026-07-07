@@ -16,8 +16,8 @@ export const strings = {
   },
 
   today: {
-    greeting: "Today's focus",
-    sectionTitle: 'Today',
+    greeting: "Today",
+    sectionTitle: "Today's Focus",
     footerNote: 'Move gently forward',
   },
 
@@ -27,7 +27,7 @@ export const strings = {
   },
 
   someday: {
-    greeting: 'Someday, maybe',
+    greeting: 'Someday',
     sectionTitle: 'This weekend',
   },
 

@@ -5,6 +5,7 @@ import { useColorScheme } from 'nativewind';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import BaseScreen from './BaseScreen';
+import GlassCard from '@/components/ui/GlassCard';
 import Header from '@/components/ui/Header';
 import SectionTitle from '@/components/ui/SectionTitle';
 import TaskRow from '@/components/ui/TaskRow';
@@ -112,14 +113,14 @@ export default function TaskListScreen({
     <BaseScreen className="pt-2">
       <Header title={greeting} />
       <ScrollView contentContainerClassName="pt-5" showsVerticalScrollIndicator={false}>
-        <View className="rounded-[28px] bg-white dark:bg-surface-dark-primary/90 px-5 py-6 shadow-lg shadow-black/[0.09] dark:shadow-black/[0.22] border border-black/[0.05] dark:border-transparent">
+        <GlassCard className="px-5 py-6">
           {sections.map((section, sectionIndex) => (
             <View
               key={section.title}
               className={`${sectionIndex === sections.length - 1 ? '' : 'mb-7'}`}
             >
               <SectionTitle title={sectionIndex === 0 ? sectionTitle : section.title} />
-              <View className="rounded-[22px] bg-surface-secondary dark:bg-surface-dark-secondary/80 px-4 py-2">
+              <View className="rounded-[22px] px-4 py-2">
                 {section.items.map((item, index) => (
                   <Animated.View
                     key={`${section.title}-${item.label}-${index}`}
@@ -218,7 +219,7 @@ export default function TaskListScreen({
               <PrimaryButton label={ctaLabel} onPress={startAddingTask} />
             </View>
           )}
-        </View>
+        </GlassCard>
         {footerNote ? (
           <View className="mt-6 items-center pb-6">
             <Text className="font-serif text-base tracking-wide text-ink-tertiary dark:text-ink-dark-tertiary">

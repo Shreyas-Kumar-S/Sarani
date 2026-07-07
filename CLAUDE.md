@@ -59,7 +59,7 @@ components/
     SectionTitle.tsx
     TaskRow.tsx
     PrimaryButton.tsx
-    AtmosphericBackground.tsx  # Drifting blurred blobs (persistent bg layer)
+    AnimatedBackground.tsx  # Drifting sage bulbs/bubbles (persistent bg layer)
   SplashScreen.tsx      # Reanimated fade-out wrapper
   SplashLogo.tsx        # SVG logo, exports SplashLogoLight + SplashLogoDark
 ```

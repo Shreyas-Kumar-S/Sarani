@@ -13,7 +13,7 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
-import AtmosphericBackground from '@/components/ui/AtmosphericBackground';
+import AnimatedBackground from '@/components/ui/AnimatedBackground';
 import { strings } from '@/constants/strings';
 import { useAppRevealed } from '@/hooks/AppReveal';
 import { NoteProvider } from '@/hooks/NoteStore';
@@ -102,7 +102,7 @@ export default function TabsLayout() {
             style={StyleSheet.absoluteFill}
             className="bg-surface-page dark:bg-surface-dark-page"
           >
-            <AtmosphericBackground />
+            <AnimatedBackground />
           </View>
           <Tabs
             tabBar={(props) => <RisingTabBar {...props} />}

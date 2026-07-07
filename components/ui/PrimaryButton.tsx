@@ -11,7 +11,7 @@ export default function PrimaryButton({ label, variant = 'default', onPress }: P
   const buttonClass =
     variant === 'notes'
       ? 'mt-8 bg-[#94A396]/85 py-4'
-      : 'mt-4 bg-surface-inset/80 dark:bg-surface-dark-inset py-4';
+      : 'mt-4 bg-black/[0.08] dark:bg-surface-dark-inset py-4 border border-black/[0.12] dark:border-transparent';
   const textClass =
     variant === 'notes'
       ? 'font-serif text-[22px] text-ink-dark-primary'
