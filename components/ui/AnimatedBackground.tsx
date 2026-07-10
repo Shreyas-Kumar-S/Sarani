@@ -137,7 +137,7 @@ export default function AnimatedBackground() {
 
   // A visible sage in both themes so the orbs read (dark needs a lit tint, not
   // near-black, or nothing shows against the background).
-  const orbColor = isDark ? '#38472F' : '#82AC78';
+  const orbColor = isDark ? '#4A5E3E' : '#82AC78';
 
   const orbs: OrbProps[] = [
     // Large bottom anchors — soft bulbs.
