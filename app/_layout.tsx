@@ -11,13 +11,15 @@ import * as SplashScreenExpo from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import React, { useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { LogBox, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Easing, runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '../global.css';
 
 SplashScreenExpo.preventAutoHideAsync();
+
+LogBox.ignoreLogs(['SafeAreaView has been deprecated']);
 
 // Startup flow: splash logo → welcome curtain → task sheet.
 type Phase = 'splash' | 'welcome' | 'app';

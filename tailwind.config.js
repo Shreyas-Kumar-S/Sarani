@@ -31,11 +31,11 @@ module.exports = {
 
         /* Dark Mode Surfaces — near-black ramp with subtle layering */
         'surface-dark': {
-          page: "black",
-          primary: "hsla(0, 0%, 2%, 1)",
-          secondary: "hsla(0, 0%,2%, 1)",
+          page: "hsla(0, 0%, 0%, 1)",
+          primary: "hsla(0, 0%, 3%, 1)",
+          secondary: "hsla(0, 0%, 5%, 1)",
           inset: "hsla(120, 5%, 10%, 1)",
-          nav: "hsla(0, 0%, 6%, 1)",
+          nav: "hsla(0, 0%, 4%, 1)",
         },
 
         /* Light Mode Text */
