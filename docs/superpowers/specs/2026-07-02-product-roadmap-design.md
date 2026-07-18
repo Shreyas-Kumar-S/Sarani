@@ -85,7 +85,7 @@ This is NOT the app-in-a-browser — that waits for sync (see V2).
 
 Craft + privacy features; none gate core usefulness:
 
-- **Atmosphere themes** — `AtmosphericBackground` palettes: Rain, Forest,
+- **Atmosphere themes** — `AnimatedBackground` palettes: Rain, Forest,
   Dawn, Night. Low build cost, premium feel.
 - **Home-screen widgets** (iOS + Android) — most-requested paid feature in
   minimalist todo apps; daily retention hook.

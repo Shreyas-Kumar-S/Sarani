@@ -5,19 +5,13 @@ import { View } from 'react-native';
 type BaseScreenProps = {
   children: ReactNode;
   className?: string;
-  variant?: 'default' | 'notes';
 };
 
-export default function BaseScreen({ children, className, variant = 'default' }: BaseScreenProps) {
+export default function BaseScreen({ children, className }: BaseScreenProps) {
   const insets = useSafeAreaInsets();
 
-  // Default screens stay transparent so the persistent atmospheric background
-  // (rendered once in the tabs layout) shows through and remains continuous
-  // across tab switches. The notes variant paints its own opaque surface.
-  const backgroundClass = variant === 'notes' ? 'bg-[#303a36] dark:bg-[#303a36]' : 'bg-transparent';
-
   return (
-    <View className={`flex-1 ${backgroundClass}`}>
+    <View className="flex-1 bg-transparent">
       <View
         style={{
           flex: 1,

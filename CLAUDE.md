@@ -37,11 +37,10 @@ app/
   _layout.tsx           # Root: splash gate → Stack navigator
   index.tsx             # Redirects to /(tabs)/today
   (tabs)/
-    _layout.tsx         # Floating blurred tab bar (Today / Upcoming / Someday / Lists)
+    _layout.tsx         # Floating blurred tab bar (Today / Upcoming / Someday)
     today.tsx
     upcoming.tsx
     someday.tsx
-    lists.tsx
 ```
 
 `_layout.tsx` controls the two-phase startup: native splash → custom animated SVG splash → main app.
@@ -51,15 +50,14 @@ app/
 ```
 components/
   screens/              # Full-screen templates (data-in, layout-out)
-    BaseScreen.tsx      # SafeAreaView wrapper; variant="notes" swaps background
+    BaseScreen.tsx      # SafeAreaView wrapper
     TaskListScreen.tsx  # Reusable task list with inline add-task input
-    NotesScreen.tsx     # Dark green notes variant
   ui/                   # Primitive building blocks
     Header.tsx
     SectionTitle.tsx
     TaskRow.tsx
     PrimaryButton.tsx
-    AtmosphericBackground.tsx  # Drifting blurred blobs (persistent bg layer)
+    AnimatedBackground.tsx  # Drifting sage bulbs/bubbles (persistent bg layer)
   SplashScreen.tsx      # Reanimated fade-out wrapper
   SplashLogo.tsx        # SVG logo, exports SplashLogoLight + SplashLogoDark
 ```
@@ -72,7 +70,7 @@ Tab screens are thin: they read/write task state and call the matching screen te
 
 ### Domain types
 
-Shared types live in `types/` (`types/task.ts` → `TaskItem`, `TaskSection`; `types/note.ts` → `NoteBlock`) so data and state modules never import from UI components.
+Shared types live in `types/` (`types/task.ts` → `TaskItem`, `TaskSection`) so data and state modules never import from UI components.
 
 ### Styling — NativeWind (Tailwind for RN)
 

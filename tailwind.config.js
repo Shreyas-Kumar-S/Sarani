@@ -20,22 +20,27 @@ module.exports = {
           dark: "#5F7A5C",
         },
 
-        /* Light Mode Surfaces */
+        /* Light Mode Surfaces — hex, not hsla(): NativeWind's native color
+           parser has a known bug with chromatic (non-zero-saturation) hsla()
+           values, which made `inset` render as a visibly different, lighter
+           gray on-device than in the web/emulator preview. Converted the
+           whole ramp to hex (same colors) so nothing in this group can hit
+           that bug, on this token or a future one. */
         surface: {
-          page: "hsla(35, 28%, 98%, 1)",
-          primary: "hsla(35, 28%, 97%, 1)",
-          secondary: "hsla(35, 20%, 96%, 1)",
-          inset: "hsla(120, 15%, 95%, 1)",
-          nav: "hsla(35, 28%, 97%, 1)",
+          page: "#FBFAF8",
+          primary: "#FAF8F5",
+          secondary: "#F7F5F3",
+          inset: "#F0F4F0",
+          nav: "#FAF8F5",
         },
 
-        /* Dark Mode Surfaces */
+        /* Dark Mode Surfaces — near-black ramp with subtle layering */
         'surface-dark': {
-          page: "hsla(0, 0%, 8%, 1)",
-          primary: "hsla(0, 0%, 10%, 1)",
-          secondary: "hsla(0, 0%, 12%, 1)",
-          inset: "hsla(120, 5%, 14%, 1)",
-          nav: "hsla(0, 0%, 10%, 1)",
+          page: "#000000",
+          primary: "#080808",
+          secondary: "#0D0D0D",
+          inset: "#181B18",
+          nav: "#0A0A0A",
         },
 
         /* Light Mode Text */

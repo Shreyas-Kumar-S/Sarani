@@ -12,12 +12,12 @@ export const strings = {
     today: 'Today',
     upcoming: 'Upcoming',
     someday: 'Someday',
-    lists: 'Notes',
+    history: 'History',
   },
 
   today: {
-    greeting: "Today's focus",
-    sectionTitle: 'Today',
+    greeting: "Today",
+    sectionTitle: "Today's Focus",
     footerNote: 'Move gently forward',
   },
 
@@ -27,24 +27,18 @@ export const strings = {
   },
 
   someday: {
-    greeting: 'Someday, maybe',
+    greeting: 'Someday',
     sectionTitle: 'This weekend',
+  },
+
+  history: {
+    empty: 'Nothing completed yet',
   },
 
   tasks: {
     addCta: '+ Add task',
     newTaskPlaceholder: 'New task',
     carriedOverTag: 'Undone',
-  },
-
-  notes: {
-    title: 'Notes',
-    intro: 'Get thoughts out of your head\nand breathe a little easier',
-    newNoteCta: '+ New note',
-    newNotePlaceholder: 'A passing thought',
-    today: 'Today',
-    yesterday: 'Yesterday',
-    empty: 'Nothing here yet.\nWrite something small.',
   },
 
   actions: {
@@ -54,7 +48,6 @@ export const strings = {
   a11y: {
     toggleTheme: 'Toggle color theme',
     commitTask: 'Add this task',
-    commitNote: 'Add this note',
     commitEdit: 'Save changes',
   },
 

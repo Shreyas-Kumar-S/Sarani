@@ -13,10 +13,9 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
-import AtmosphericBackground from '@/components/ui/AtmosphericBackground';
+import AnimatedBackground from '@/components/ui/AnimatedBackground';
 import { strings } from '@/constants/strings';
 import { useAppRevealed } from '@/hooks/AppReveal';
-import { NoteProvider } from '@/hooks/NoteStore';
 import { TabKey, TaskProvider, useTabAllComplete } from '@/hooks/TaskStore';
 
 // How far below its resting spot the bar starts (its height + bottom offset,
@@ -85,24 +84,17 @@ export default function TabsLayout() {
     shadowOffset: { width: 0, height: 10 },
     elevation: 14,
   };
-  const notesTabBarStyle = {
-    ...baseTabBarStyle,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderColor: 'rgba(255,255,255,0.18)',
-    shadowOpacity: 0.18,
-  };
 
   return (
     <TaskProvider>
-      <NoteProvider>
-        <View style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
           {/* Persistent atmospheric layer — rendered once, behind the navigator, so
             it stays continuous across tab switches instead of remounting per screen. */}
           <View
             style={StyleSheet.absoluteFill}
             className="bg-surface-page dark:bg-surface-dark-page"
           >
-            <AtmosphericBackground />
+            <AnimatedBackground />
           </View>
           <Tabs
             tabBar={(props) => <RisingTabBar {...props} />}
@@ -153,20 +145,16 @@ export default function TabsLayout() {
               }}
             />
             <Tabs.Screen
-              name="lists"
+              name="history"
               options={{
-                title: strings.tabs.lists,
-                tabBarActiveTintColor: '#DDE4DF',
-                tabBarInactiveTintColor: 'rgba(255,255,255,0.65)',
-                tabBarStyle: notesTabBarStyle,
+                title: strings.tabs.history,
                 tabBarIcon: ({ color, size }) => (
-                  <Feather name="feather" size={size} color={color} />
+                  <Feather name="clock" size={size} color={color} />
                 ),
               }}
             />
           </Tabs>
         </View>
-      </NoteProvider>
-    </TaskProvider>
+      </TaskProvider>
   );
 }
