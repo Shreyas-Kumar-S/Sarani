@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TaskProvider, useTaskList } from '../TaskStore';
+import { TaskProvider, useHistory, useTaskList } from '../TaskStore';
 import { todayString } from '../taskStorage';
 
 const wrapper = ({ children }: { children: ReactNode }) => <TaskProvider>{children}</TaskProvider>;
@@ -10,6 +10,13 @@ const wrapper = ({ children }: { children: ReactNode }) => <TaskProvider>{childr
 const useBoth = () => ({
   today: useTaskList('today'),
   upcoming: useTaskList('upcoming'),
+});
+
+const useWithHistory = () => ({
+  today: useTaskList('today'),
+  upcoming: useTaskList('upcoming'),
+  someday: useTaskList('someday'),
+  history: useHistory(),
 });
 
 const seed = (state: unknown) =>
@@ -90,5 +97,69 @@ describe('TaskStore', () => {
 
     expect(result.current.today.tasks).toHaveLength(0);
     expect(result.current.upcoming.tasks).toEqual([{ label: 'carry', checked: false }]);
+  });
+
+  describe('history', () => {
+    it("mirrors Today's live list into today's history entry", async () => {
+      await seed({
+        tasksByTab: { today: [{ label: 'read', checked: false }], upcoming: [], someday: [] },
+        lastOpenedDate: todayString(),
+      });
+
+      const { result } = renderHook(useWithHistory, { wrapper });
+      await waitFor(() => expect(result.current.today.tasks).toHaveLength(1));
+
+      await waitFor(() =>
+        expect(result.current.history.getDay(todayString())).toEqual([
+          { label: 'read', checked: false },
+        ])
+      );
+      expect(result.current.history.datesWithHistory).toContain(todayString());
+
+      act(() => {
+        result.current.today.toggleTask(0, 0);
+      });
+
+      await waitFor(() =>
+        expect(result.current.history.getDay(todayString())).toEqual([
+          { label: 'read', checked: true },
+        ])
+      );
+    });
+
+    it('logs an Upcoming completion into history under today, and un-checking removes it', async () => {
+      await seed({
+        tasksByTab: {
+          today: [],
+          upcoming: [{ label: 'read a book', checked: false }],
+          someday: [],
+        },
+        lastOpenedDate: todayString(),
+      });
+
+      const { result } = renderHook(useWithHistory, { wrapper });
+      await waitFor(() => expect(result.current.upcoming.tasks).toHaveLength(1));
+
+      act(() => {
+        result.current.upcoming.toggleTask(0, 0);
+      });
+
+      await waitFor(() =>
+        expect(result.current.history.getDay(todayString())).toEqual([
+          { label: 'read a book', checked: true },
+        ])
+      );
+      expect(result.current.history.datesWithHistory).toContain(todayString());
+
+      act(() => {
+        result.current.upcoming.toggleTask(0, 0);
+      });
+
+      await waitFor(() => expect(result.current.history.getDay(todayString())).toEqual([]));
+      // Today itself is (and stayed) empty, and the one completion that had
+      // been logged under it is now gone — the date should drop out of
+      // datesWithHistory entirely rather than linger as an empty entry.
+      expect(result.current.history.datesWithHistory).not.toContain(todayString());
+    });
   });
 });

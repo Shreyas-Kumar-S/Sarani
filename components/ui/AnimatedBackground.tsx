@@ -156,7 +156,7 @@ export default function AnimatedBackground() {
       style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
     >
       {orbs.map((orb) => (
-        <Orb {...orb} key={`orb-${orb.left}-${orb.top}-${orb.durationX}`} />
+        <Orb key={`orb-${orb.left}-${orb.top}-${orb.durationX}`} {...orb} />
       ))}
     </Animated.View>
   );

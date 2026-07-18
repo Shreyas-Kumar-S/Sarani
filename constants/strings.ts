@@ -32,7 +32,8 @@ export const strings = {
   },
 
   history: {
-    empty: 'Nothing completed yet',
+    emptyTitle: 'This month is quiet so far',
+    emptyCta: 'Go to Today',
   },
 
   tasks: {

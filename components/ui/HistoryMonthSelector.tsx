@@ -64,14 +64,20 @@ export default function HistoryMonthSelector({
   // Where the pill is currently anchored — springs to the nearest chip
   // whenever the drag crosses into it (see the useAnimatedReaction below).
   const anchorX = useSharedValue(0);
+  // Deliberately not derived inline from activeMonthKey each render: this
+  // needs to update per-frame during a drag (see handleScroll below), well
+  // before the 150ms settle debounce ever touches activeMonthKey — deriving
+  // it from the prop would tie the highlight to that debounce and break the
+  // live "following the drag" motion the pill/text fade depend on.
   const [centeredKey, setCenteredKey] = useState(activeMonthKey);
   const sidePadding = containerWidth > ITEM_WIDTH ? (containerWidth - ITEM_WIDTH) / 2 : 0;
   const { colorScheme } = useColorScheme();
   const inactiveTextColor = colorScheme === 'dark' ? INACTIVE_TEXT_DARK : INACTIVE_TEXT_LIGHT;
 
-  useEffect(() => {
-    setCenteredKey(activeMonthKey);
-  }, [activeMonthKey]);
+  // No effect syncing centeredKey from activeMonthKey: activeMonthKey only
+  // ever changes via this component's own onSelect call below, which fires
+  // exactly when centeredKey has already settled to that same value — a
+  // sync effect here would just be echoing state that's already current.
 
   // Centers the scroller on the active month once we know how wide the
   // viewport is — only relevant on mount/resize since scrolling itself is
@@ -183,6 +189,10 @@ export default function HistoryMonthSelector({
         style={{ height: PILL_HEIGHT }}
         contentContainerStyle={{ paddingHorizontal: sidePadding }}
       >
+        {/* Fixed 12-item carousel, not a virtualization candidate — FlashList/
+            FlatList would complicate the exact offset-to-index math (index *
+            ITEM_WIDTH) and per-frame worklet styling this scroller depends on,
+            for a dataset that never grows. */}
         {months.map((month, index) => (
           <HistoryMonthChip
             key={month.key}
