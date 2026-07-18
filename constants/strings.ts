@@ -36,6 +36,48 @@ export const strings = {
     emptyCta: 'Go to Today',
   },
 
+  about: {
+    title: 'Origins',
+    tagline: 'A calm space to plan your day, week, and someday — one gentle task at a time.',
+    exploreSectionsLabel: 'EXPLORE SECTIONS',
+    featuresComingLabel: 'FEATURES TO COME',
+    sections: {
+      today: {
+        label: 'Today',
+        description:
+          "Add the tasks you want to get done today — your immediate, in-the-moment focus.",
+      },
+      upcoming: {
+        label: 'Upcoming',
+        description:
+          "Plan ahead. Tomorrow holds the tasks you're preparing for next, before they become today's work.",
+      },
+      someday: {
+        label: 'Someday',
+        description:
+          'A holding space for longer-term or someday/maybe work — things worth doing eventually, no deadline attached.',
+      },
+      history: {
+        label: 'History',
+        description:
+          "A record of everything you've completed, organized by month, so you can look back gently on your progress.",
+      },
+      about:{
+        label: 'About',
+        description: "Where you are right now, shows the apps info"
+      },
+    },
+    upcomingFeatures: [
+      { title: 'Streaks & reminders', description: 'Gentle nudges to keep your habits going.' },
+      { title: 'Weekly reflections', description: 'A quiet summary of how your week went.' },
+      { title: 'Shared lists', description: 'Plan someday goals together with others.' },
+    ],
+  },
+
+  nav: {
+    flameToast: 'Stay tuned',
+  },
+
   tasks: {
     addCta: '+ Add task',
     newTaskPlaceholder: 'New task',
@@ -50,6 +92,9 @@ export const strings = {
     toggleTheme: 'Toggle color theme',
     commitTask: 'Add this task',
     commitEdit: 'Save changes',
+    openAbout: 'About Serein',
+    closeAbout: 'Close',
+    flameTeaser: 'Coming soon',
   },
 
   update: {
