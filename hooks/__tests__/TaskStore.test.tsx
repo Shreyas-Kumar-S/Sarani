@@ -161,5 +161,63 @@ describe('TaskStore', () => {
       // datesWithHistory entirely rather than linger as an empty entry.
       expect(result.current.history.datesWithHistory).not.toContain(todayString());
     });
+
+    it('preserves history when promoting an already-completed carried-over task', async () => {
+      await seed({
+        tasksByTab: {
+          today: [{ label: 'carry', checked: true, carriedOver: true }],
+          upcoming: [],
+          someday: [],
+        },
+        lastOpenedDate: todayString(),
+      });
+
+      const { result } = renderHook(useWithHistory, { wrapper });
+      await waitFor(() => expect(result.current.today.tasks).toHaveLength(1));
+      // Pre-promotion, this is mirrored straight from the live Today list,
+      // carriedOver flag and all — that flag only gets shed once promoted.
+      await waitFor(() =>
+        expect(result.current.history.getDay(todayString())).toEqual([
+          { label: 'carry', checked: true, carriedOver: true },
+        ])
+      );
+
+      act(() => {
+        result.current.today.promoteTask(0);
+      });
+
+      expect(result.current.today.tasks).toHaveLength(0);
+      expect(result.current.upcoming.tasks).toEqual([{ label: 'carry', checked: true }]);
+      // The task is gone from Today's live list, but promoting it must not
+      // erase today's record of having finished it.
+      await waitFor(() =>
+        expect(result.current.history.getDay(todayString())).toEqual([
+          { label: 'carry', checked: true },
+        ])
+      );
+    });
+
+    it('does not log history when promoting a still-unchecked carried-over task', async () => {
+      await seed({
+        tasksByTab: {
+          today: [{ label: 'defer', checked: false, carriedOver: true }],
+          upcoming: [],
+          someday: [],
+        },
+        lastOpenedDate: todayString(),
+      });
+
+      const { result } = renderHook(useWithHistory, { wrapper });
+      await waitFor(() => expect(result.current.today.tasks).toHaveLength(1));
+
+      act(() => {
+        result.current.today.promoteTask(0);
+      });
+
+      expect(result.current.upcoming.tasks).toEqual([{ label: 'defer', checked: false }]);
+      await waitFor(() =>
+        expect(result.current.history.datesWithHistory).not.toContain(todayString())
+      );
+    });
   });
 });

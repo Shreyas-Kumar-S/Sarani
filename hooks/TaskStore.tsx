@@ -164,22 +164,39 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  // Move a carried-over Today task into Upcoming, shedding the carriedOver flag.
-  const promoteToUpcoming = useCallback((itemIndex: number) => {
-    setTasksByTab((prev) => {
-      const task = prev.today[itemIndex];
+  // Move a carried-over Today task into Upcoming, shedding the carriedOver
+  // flag. If it was already checked off, that completion is logged into
+  // today's history the same way toggleTask logs an Upcoming/Someday
+  // completion — otherwise the move would silently erase today's record of
+  // having finished it (it's about to disappear from the live Today mirror).
+  const promoteToUpcoming = useCallback(
+    (itemIndex: number) => {
+      const task = tasksByTab.today[itemIndex];
       if (!task) {
-        return prev;
+        return;
       }
 
       const { carriedOver: _carriedOver, ...promoted } = task;
-      return {
+
+      setTasksByTab((prev) => ({
         ...prev,
         today: prev.today.filter((_, i) => i !== itemIndex),
         upcoming: [...prev.upcoming, promoted],
-      };
-    });
-  }, []);
+      }));
+
+      if (task.checked) {
+        setOtherCompletions((prevOther) => {
+          const dayEntries = prevOther[today] ?? [];
+          const withoutExisting = dayEntries.filter((entry) => entry.label !== task.label);
+          return {
+            ...prevOther,
+            [today]: [...withoutExisting, { label: task.label, checked: true }],
+          };
+        });
+      }
+    },
+    [tasksByTab, today]
+  );
 
   const value = useMemo(
     () => ({
