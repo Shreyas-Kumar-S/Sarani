@@ -5,10 +5,7 @@
     "scheme": "serein",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": {
-      "light": "./assets/icons/app-icon-light.png",
-      "dark": "./assets/icons/app-icon-dark.png"
-    },
+    "icon": "./assets/icons/app-icon-light.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/icons/app-icon-light.png",
@@ -22,6 +19,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.shreyas.serein",
+      "icon": {
+        "light": "./assets/icons/app-icon-light.png",
+        "dark": "./assets/icons/app-icon-dark.png"
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
