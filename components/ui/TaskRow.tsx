@@ -53,7 +53,12 @@ export default function TaskRow({
       >
         {checked ? <Feather name="check" size={14} color="#F6F2EC" /> : null}
       </Pressable>
-      <Pressable className="flex-1" onPress={onLabelPress}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${strings.a11y.editTaskPrefix} ${label}`}
+        className="flex-1"
+        onPress={onLabelPress}
+      >
         <Text
           className={`text-[21px] leading-7 text-ink-secondary dark:text-ink-dark-secondary ${
             checked ? 'line-through opacity-55' : ''
@@ -64,6 +69,8 @@ export default function TaskRow({
       </Pressable>
       {carriedOver ? (
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={strings.a11y.moveToUpcoming}
           onPress={onTagPress}
           hitSlop={8}
           className="ml-3 rounded-full bg-primary/15 px-2.5 py-1"
