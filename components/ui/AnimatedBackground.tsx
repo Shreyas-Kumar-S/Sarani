@@ -89,7 +89,12 @@ function Orb({
             <Defs>
               <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
                 {BULB_STOPS.map((s) => (
-                  <Stop key={s.offset} offset={s.offset} stopColor={color} stopOpacity={opacity * s.mult} />
+                  <Stop
+                    key={s.offset}
+                    offset={s.offset}
+                    stopColor={color}
+                    stopOpacity={opacity * s.mult}
+                  />
                 ))}
               </RadialGradient>
             </Defs>
@@ -141,13 +146,85 @@ export default function AnimatedBackground() {
 
   const orbs: OrbProps[] = [
     // Large bottom anchors — soft bulbs.
-    { left: -70, top: 560, size: 300, variant: 'bulb', color: orbColor, opacity: isDark ? 0.12 : 0.5, driftX: 55, driftY: 72, durationX: 5000, durationY: 6400, delay: 0 },
-    { left: 190, top: 620, size: 260, variant: 'bulb', color: orbColor, opacity: isDark ? 0.1 : 0.46, driftX: 64, driftY: 80, durationX: 5600, durationY: 4400, delay: 300 },
+    {
+      left: -70,
+      top: 560,
+      size: 300,
+      variant: 'bulb',
+      color: orbColor,
+      opacity: isDark ? 0.12 : 0.5,
+      driftX: 55,
+      driftY: 72,
+      durationX: 5000,
+      durationY: 6400,
+      delay: 0,
+    },
+    {
+      left: 190,
+      top: 620,
+      size: 260,
+      variant: 'bulb',
+      color: orbColor,
+      opacity: isDark ? 0.1 : 0.46,
+      driftX: 64,
+      driftY: 80,
+      durationX: 5600,
+      durationY: 4400,
+      delay: 300,
+    },
     // Floating ones — true bubbles.
-    { left: 70, top: 380, size: 190, variant: 'bubble', color: orbColor, opacity: isDark ? 0.14 : 0.6, driftX: 82, driftY: 74, durationX: 4200, durationY: 5200, delay: 700 },
-    { left: 250, top: 190, size: 120, variant: 'bubble', color: orbColor, opacity: isDark ? 0.18 : 0.7, driftX: 96, driftY: 108, durationX: 3400, durationY: 2900, delay: 500 },
-    { left: -20, top: 300, size: 140, variant: 'bubble', color: orbColor, opacity: isDark ? 0.14 : 0.6, driftX: 80, driftY: 92, durationX: 3900, durationY: 3300, delay: 1000 },
-    { left: 160, top: 480, size: 95, variant: 'bubble', color: orbColor, opacity: isDark ? 0.18 : 0.72, driftX: 104, driftY: 90, durationX: 3000, durationY: 3600, delay: 200 },
+    {
+      left: 70,
+      top: 380,
+      size: 190,
+      variant: 'bubble',
+      color: orbColor,
+      opacity: isDark ? 0.14 : 0.6,
+      driftX: 82,
+      driftY: 74,
+      durationX: 4200,
+      durationY: 5200,
+      delay: 700,
+    },
+    {
+      left: 250,
+      top: 190,
+      size: 120,
+      variant: 'bubble',
+      color: orbColor,
+      opacity: isDark ? 0.18 : 0.7,
+      driftX: 96,
+      driftY: 108,
+      durationX: 3400,
+      durationY: 2900,
+      delay: 500,
+    },
+    {
+      left: -20,
+      top: 300,
+      size: 140,
+      variant: 'bubble',
+      color: orbColor,
+      opacity: isDark ? 0.14 : 0.6,
+      driftX: 80,
+      driftY: 92,
+      durationX: 3900,
+      durationY: 3300,
+      delay: 1000,
+    },
+    {
+      left: 160,
+      top: 480,
+      size: 95,
+      variant: 'bubble',
+      color: orbColor,
+      opacity: isDark ? 0.18 : 0.72,
+      driftX: 104,
+      driftY: 90,
+      durationX: 3000,
+      durationY: 3600,
+      delay: 200,
+    },
   ];
 
   return (
