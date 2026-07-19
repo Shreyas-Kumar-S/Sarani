@@ -39,10 +39,7 @@ export default function HistoryMonthChip({
 }: HistoryMonthChipProps) {
   const textStyle = useAnimatedStyle(() => {
     const chipPos = index * itemWidth;
-    const distance = Math.min(
-      Math.abs(scrollX.value - chipPos),
-      Math.abs(anchorX.value - chipPos)
-    );
+    const distance = Math.min(Math.abs(scrollX.value - chipPos), Math.abs(anchorX.value - chipPos));
     const color = interpolateColor(distance, [0, itemWidth], [ACTIVE_TEXT, inactiveTextColor]);
     return { color };
   });

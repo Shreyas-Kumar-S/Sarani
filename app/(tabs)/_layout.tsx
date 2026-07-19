@@ -200,7 +200,10 @@ function RisingTabBar({
           {TAB_BAR_SLOTS.map((slot) => {
             if (slot === 'flame') {
               return (
-                <View key="flame" style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                <View
+                  key="flame"
+                  style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+                >
                   <FlameTeaserButton onPress={onFlamePress} isDark={isDark} />
                 </View>
               );
@@ -217,7 +220,11 @@ function RisingTabBar({
             const label = options.title ?? route.name;
 
             const onPress = () => {
-              const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
               if (!focused && !event.defaultPrevented) {
                 navigation.navigate(route.name);
               }
@@ -320,19 +327,12 @@ export default function TabsLayout() {
       <View style={{ flex: 1 }}>
         {/* Persistent atmospheric layer — rendered once, behind the navigator, so
             it stays continuous across tab switches instead of remounting per screen. */}
-        <View
-          style={StyleSheet.absoluteFill}
-          className="bg-surface-page dark:bg-surface-dark-page"
-        >
+        <View style={StyleSheet.absoluteFill} className="bg-surface-page dark:bg-surface-dark-page">
           <AnimatedBackground />
         </View>
         <Tabs
           tabBar={(props) => (
-            <RisingTabBar
-              {...props}
-              isDark={isDark}
-              onFlamePress={handleFlamePress}
-            />
+            <RisingTabBar {...props} isDark={isDark} onFlamePress={handleFlamePress} />
           )}
           screenOptions={{
             headerShown: false,
@@ -384,9 +384,7 @@ export default function TabsLayout() {
             name="history"
             options={{
               title: strings.tabs.history,
-              tabBarIcon: ({ color, size }) => (
-                <Feather name="clock" size={size} color={color} />
-              ),
+              tabBarIcon: ({ color, size }) => <Feather name="clock" size={size} color={color} />,
             }}
           />
         </Tabs>

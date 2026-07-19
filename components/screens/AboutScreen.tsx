@@ -56,11 +56,7 @@ export default function AboutScreen() {
   const activeIndex = SECTION_ORDER.indexOf(activeSection);
 
   return (
-
-    <View
-      style={{ backgroundColor: isDark ? '#000000' : '#FBFAF8' }}
-      className="flex-1"
-    >
+    <View style={{ backgroundColor: isDark ? '#000000' : '#FBFAF8' }} className="flex-1">
       <View
         style={{ paddingTop: insets.top + 16 }}
         className="flex-row items-center justify-between px-6 pb-2"

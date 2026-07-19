@@ -12,7 +12,9 @@ export default function HistoryDayGroup({ day, isLast = false }: HistoryDayGroup
   return (
     <View
       className={
-        isLast ? '' : 'mb-5 border-b border-ink-quaternary/15 pb-4 dark:border-ink-dark-quaternary/15'
+        isLast
+          ? ''
+          : 'mb-5 border-b border-ink-quaternary/15 pb-4 dark:border-ink-dark-quaternary/15'
       }
     >
       <Text className="mb-2.5 text-[13px] font-semibold tracking-wide text-ink-tertiary dark:text-ink-dark-tertiary">

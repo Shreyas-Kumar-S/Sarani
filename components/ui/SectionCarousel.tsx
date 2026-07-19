@@ -44,7 +44,15 @@ type CarouselCardProps = {
 // functions of its signed distance from the (animating) center — the fan
 // shape and the "sliding into place" motion come from the same formula,
 // evaluated at whatever fractional value `progress` currently is mid-transition.
-function CarouselCard({ item, index, total, progress, active, accentColor, onPress }: CarouselCardProps) {
+function CarouselCard({
+  item,
+  index,
+  total,
+  progress,
+  active,
+  accentColor,
+  onPress,
+}: CarouselCardProps) {
   const cardStyle = useAnimatedStyle(() => {
     let offset = index - progress.value;
     if (offset > total / 2) {
@@ -121,7 +129,12 @@ function CarouselCard({ item, index, total, progress, active, accentColor, onPre
 // it to the center. `activeIndex` is fully controlled by the parent — this
 // component only owns the animated transition toward whatever index it's
 // given, so tapping and swiping both flow through the same onChange callback.
-export default function SectionCarousel({ items, activeIndex, onChange, accentColor }: SectionCarouselProps) {
+export default function SectionCarousel({
+  items,
+  activeIndex,
+  onChange,
+  accentColor,
+}: SectionCarouselProps) {
   const progress = useSharedValue(activeIndex);
 
   useEffect(() => {
