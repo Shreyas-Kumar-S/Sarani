@@ -10,7 +10,7 @@ describe('appConfigStorage', () => {
     expect(await loadCachedConfig()).toBeNull();
   });
   it('round-trips a config', async () => {
-    const c = { minSupportedVersion: '1.0.0', latestVersion: '1.2.0', devNote: 'hi' };
+    const c = { minSupportedVersion: '1.0.0', latestVersion: '1.2.0', updateMessage: 'hi' };
     await saveCachedConfig(c);
     expect(await loadCachedConfig()).toEqual(c);
   });

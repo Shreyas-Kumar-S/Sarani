@@ -1,11 +1,12 @@
-// Single source of truth for user-facing copy. Keep display text here (not inline
-// in components) so wording/tone can be tuned in one place.
 export const strings = {
   welcome: {
     title: 'Welcome to Serein',
-    tagline: 'Move Gently Forward',
-    description:
-      "This is a quiet space for your intentions, kept on your device and available offline. There's nothing to keep up with here. Take things as they come.",
+    tagline: 'From Attention to Intention',
+    description: [
+      'The world moves fast, and it wants all of you — every ping, every checklist, every task competing for the same sliver of attention your actual life needs. Somewhere in that race, the to-do list stopped serving you and started running you.',
+      "Serein steps back from that. It doesn't try to pin down a reality that's always shifting — it simply stays beside it, holding a quiet record of what you meant to do, so intention never gets lost chasing attention.",
+      'Let life stay unpredictable. Let Serein keep the thread.',
+    ],
   },
 
   tabs: {
@@ -38,7 +39,8 @@ export const strings = {
 
   about: {
     title: 'Origins',
-    tagline: 'A calm space to plan your day, week, and someday — one gentle task at a time.',
+    coreIdea:
+      "The world runs on attention. Serein runs on intention. It doesn't try to hold down a reality that keeps changing — it just keeps a quiet record of what you meant to do, so you never lose the thread while everything else moves.",
     exploreSectionsLabel: 'EXPLORE SECTIONS',
     featuresComingLabel: 'FEATURES TO COME',
     sections: {
@@ -67,12 +69,7 @@ export const strings = {
         description: "Where you are right now, shows the apps info"
       },
     },
-    upcomingFeatures: [
-      { title: 'Streaks & reminders', description: 'Gentle nudges to keep your habits going.' },
-      { title: 'Weekly reflections', description: 'A quiet summary of how your week went.' },
-      { title: 'Shared lists', description: 'Plan someday goals together with others.' },
-    ],
-  },
+    },
 
   nav: {
     flameToast: 'Stay tuned',

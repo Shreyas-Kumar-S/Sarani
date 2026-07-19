@@ -3,11 +3,18 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AboutScreen from '../AboutScreen';
 import { strings } from '@/constants/strings';
+import { DEFAULT_APP_CONFIG } from '@/types/appConfig';
+import * as appConfigStore from '@/hooks/AppConfigStore';
 
 const mockBack = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: mockBack, push: jest.fn() }),
 }));
+
+jest.spyOn(appConfigStore, 'useAppConfig').mockReturnValue({
+  config: DEFAULT_APP_CONFIG,
+  updateState: 'none',
+});
 
 const safeAreaMetrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -40,9 +47,9 @@ describe('AboutScreen', () => {
     expect(api.queryByText(strings.about.sections.today.description)).toBeNull();
   });
 
-  it('lists every upcoming feature', () => {
+  it('lists every upcoming feature from the app config', () => {
     const api = renderScreen();
-    strings.about.upcomingFeatures.forEach((feature) => {
+    DEFAULT_APP_CONFIG.upcomingFeatures?.forEach((feature) => {
       expect(api.getByText(feature.title)).toBeTruthy();
     });
   });
