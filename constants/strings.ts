@@ -2,16 +2,17 @@ export const strings = {
   welcome: {
     title: 'Welcome to Serein',
     tagline: 'From Attention to Intention',
+    privacyPromise: 'No account. No cloud. Yours — offline, always.',
     description: [
-      'The world moves fast, and it wants all of you — every ping, every checklist, every task competing for the same sliver of attention your actual life needs. Somewhere in that race, the to-do list stopped serving you and started running you.',
-      "Serein steps back from that. It doesn't try to pin down a reality that's always shifting — it simply stays beside it, holding a quiet record of what you meant to do, so intention never gets lost chasing attention.",
+      'Life is unpredictable let focus on what truly matters',
+      "A quite space for thoughts, tasks and intentios",
       'Let life stay unpredictable. Let Serein keep the thread.',
     ],
   },
 
   tabs: {
     today: 'Today',
-    upcoming: 'Upcoming',
+    upcoming: 'Next Day',
     someday: 'Someday',
     history: 'History',
   },
@@ -92,6 +93,18 @@ export const strings = {
     openAbout: 'About Serein',
     closeAbout: 'Close',
     flameTeaser: 'Coming soon',
+    // Prefix, not a full phrase — combined with a task's own label at the
+    // call site (e.g. `${editTaskPrefix} ${label}`) since it's per-row.
+    editTaskPrefix: 'Edit',
+    editTaskInput: 'Edit task text',
+    newTaskInput: 'New task text',
+    moveToUpcoming: 'Move to Upcoming',
+  },
+
+  errorBoundary: {
+    title: 'Something went quietly wrong',
+    body: "This screen ran into a problem. It's been noted — try again, or come back to it a little later.",
+    retry: 'Try again',
   },
 
   update: {

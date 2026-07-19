@@ -130,6 +130,7 @@ export default function TaskListScreen({
                     {editing?.section === sectionIndex && editing?.item === index ? (
                       <View className="flex-row items-center py-[13px]">
                         <TextInput
+                          accessibilityLabel={strings.a11y.editTaskInput}
                           value={editDraft}
                           onChangeText={setEditDraft}
                           onSubmitEditing={commitEdit}
@@ -181,6 +182,7 @@ export default function TaskListScreen({
                 {canAddTasks && isAddingTask && sectionIndex === 0 ? (
                   <View className="flex-row items-center border-t border-ink-quaternary/15 dark:border-ink-dark-quaternary/15 py-[13px]">
                     <TextInput
+                      accessibilityLabel={strings.a11y.newTaskInput}
                       ref={inputRef}
                       value={draftTask}
                       onChangeText={setDraftTask}

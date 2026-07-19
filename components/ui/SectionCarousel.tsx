@@ -75,7 +75,13 @@ function CarouselCard({ item, index, total, progress, active, accentColor, onPre
 
   return (
     <Animated.View style={[{ position: 'absolute', left: '50%', top: 0 }, cardStyle]}>
-      <Pressable onPress={onPress} className="items-center gap-2">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={item.label}
+        accessibilityState={{ selected: active }}
+        onPress={onPress}
+        className="items-center gap-2"
+      >
         <View
           style={{
             width: CARD_WIDTH,

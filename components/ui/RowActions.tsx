@@ -13,6 +13,7 @@ export function RowDeleteAction({ onDelete }: RowDeleteActionProps) {
     <View className="flex-row items-center justify-end pr-3">
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={strings.actions.letItGo}
         onPress={onDelete}
         className="rounded-full bg-[#A96F63]/15 px-4 py-2"
       >

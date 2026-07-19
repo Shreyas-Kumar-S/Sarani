@@ -87,12 +87,14 @@ export default function AboutScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingTop: 10,
+          paddingTop: 16,
           paddingBottom: insets.bottom + 48,
           paddingHorizontal: 24,
         }}
       >
-        <Text className="my-6 text-balance text-[17px] leading-6 text-ink-secondary dark:text-ink-dark-secondary">
+        {/* No top margin — the header's own bottom padding plus this
+            ScrollView's paddingTop already form the gap above this text. */}
+        <Text className="mb-10 text-balance text-[17px] leading-6 text-ink-secondary dark:text-ink-dark-secondary">
           {strings.about.coreIdea}
         </Text>
 
@@ -106,7 +108,7 @@ export default function AboutScreen() {
           accentColor={accentColor}
         />
 
-        <View className="mb-8 rounded-2xl border border-primary/25 bg-primary/10 px-4 py-4">
+        <View className="mb-5 rounded-2xl border border-primary/25 bg-primary/10 px-4 py-4">
           <Text className="mb-1 text-[15px] font-semibold text-ink-primary dark:text-ink-dark-primary">
             {active.label}
           </Text>
@@ -115,7 +117,7 @@ export default function AboutScreen() {
           </Text>
         </View>
 
-        <Text className="mb-3 text-[13px] font-bold tracking-wide text-primary">
+        <Text className="mb-5 text-[13px] font-bold tracking-wide text-primary">
           {strings.about.featuresComingLabel}
         </Text>
         {(config.upcomingFeatures ?? []).map((feature) => (

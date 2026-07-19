@@ -51,6 +51,7 @@ export default function HistoryMonthChip({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ selected: active }}
       hitSlop={6}
       style={{

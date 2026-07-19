@@ -1,6 +1,6 @@
 import { usePathname } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
@@ -17,6 +17,11 @@ import { strings } from '@/constants/strings';
 type FloatingThemeToggleProps = {
   // 0 = resting in the welcome composition (centered), 1 = docked in the corner.
   dock: SharedValue<number>;
+  // How long to wait, from mount, before fading in. Defaults to the plain
+  // repeat-launch delay; the root layout overrides this to line up with the
+  // welcome curtain's privacy-line stage on a first-run (so this toggle isn't
+  // sitting mid-way through the longer welcome paragraphs).
+  introDelay?: number;
 };
 
 const SIZE = 44;
@@ -36,18 +41,24 @@ const REAPPEAR_DELAY = 350;
 // A single, persistent light/dark toggle. It mounts once (at the welcome phase) and
 // never unmounts, so the same element glides from the centre of the welcome screen
 // into the top-right corner of the task sheet — no cross-route handoff needed.
-export default function FloatingThemeToggle({ dock }: FloatingThemeToggleProps) {
+export default function FloatingThemeToggle({ dock, introDelay = 1200 }: FloatingThemeToggleProps) {
   const { colorScheme, toggleColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
   const { width: screenW, height: screenH } = useWindowDimensions();
   const pathname = usePathname();
   const isAbout = pathname === '/about';
 
-  // Fade + pop in on the welcome screen, matching the curtain's staggered entrance.
+  // A ref, not a dependency: the root layout computes introDelay once from
+  // whichever startup path is playing (welcome vs. repeat-launch skip), and
+  // this entrance should only ever run once, on mount — not retrigger if
+  // that prop's identity changes later for unrelated reasons.
+  const introDelayRef = useRef(introDelay);
+
+  // Fade + pop in once introDelay has passed.
   const intro = useSharedValue(0);
   useEffect(() => {
     intro.value = withDelay(
-      1200,
+      introDelayRef.current,
       withTiming(1, { duration: 500, easing: Easing.out(Easing.back(1.5)) })
     );
     // intro is a stable reanimated shared value, so the entrance runs once.

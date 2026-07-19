@@ -15,8 +15,10 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
+  withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
 // How far below its resting spot the bar starts (its height + bottom offset,
 // i.e. fully off-screen) and how it rises once the startup reveal completes.
@@ -47,23 +49,73 @@ function TaskTabIcon({ tab, color, size }: { tab: TabKey; color: string; size: n
 const FLAME_ICON_LIGHT = require('@/assets/images/flame_light.png');
 const FLAME_ICON_DARK = require('@/assets/images/flame_black.png');
 
+// Halo behind the flame icon, punched in on press then eased back out — a
+// radial-gradient Svg circle (same technique as AnimatedBackground's orbs)
+// rather than a shadow, since colored View shadows don't render reliably on
+// Android.
+const GLOW_SIZE = 64;
+const ICON_SIZE = 24;
+const GLOW_OFFSET = -(GLOW_SIZE - ICON_SIZE) / 2;
+
 // A teaser for a not-yet-built feature, sitting in its own column between
 // Upcoming and Someday. Not a real route — tapping it just surfaces a "stay
 // tuned" pill rather than navigating anywhere.
 function FlameTeaserButton({ onPress, isDark }: { onPress: () => void; isDark: boolean }) {
+  const glow = useSharedValue(0);
+
+  // A brighter, more saturated green reads as a genuine glow against the
+  // dark background; the same hue at a gentler strength suits a light one —
+  // the neon version would look garish rather than glowing on a pale surface.
+  const glowColor = isDark ? '#9fd7bc' : '#7A9B76';
+  const glowPeakOpacity = isDark ? 0.9 : 0.55;
+
+  const handlePress = () => {
+    glow.value = withSequence(
+      withTiming(1, { duration: 150, easing: Easing.out(Easing.quad) }),
+      withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) })
+    );
+    onPress();
+  };
+
+  const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value }));
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={strings.a11y.flameTeaser}
       hitSlop={12}
       style={({ pressed }) => (pressed ? { opacity: 0.6 } : null)}
       className="items-center justify-center"
     >
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          {
+            position: 'absolute',
+            width: GLOW_SIZE,
+            height: GLOW_SIZE,
+            left: GLOW_OFFSET,
+            top: GLOW_OFFSET,
+          },
+          glowStyle,
+        ]}
+      >
+        <Svg width={GLOW_SIZE} height={GLOW_SIZE}>
+          <Defs>
+            <RadialGradient id="flameGlow" cx="50%" cy="50%" r="50%">
+              <Stop offset="0%" stopColor={glowColor} stopOpacity={glowPeakOpacity} />
+              <Stop offset="55%" stopColor={glowColor} stopOpacity={glowPeakOpacity * 0.45} />
+              <Stop offset="100%" stopColor={glowColor} stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Circle cx={GLOW_SIZE / 2} cy={GLOW_SIZE / 2} r={GLOW_SIZE / 2} fill="url(#flameGlow)" />
+        </Svg>
+      </Animated.View>
       <Image
         source={isDark ? FLAME_ICON_DARK : FLAME_ICON_LIGHT}
         resizeMode="contain"
-        style={{ width: 24, height: 24 }}
+        style={{ width: ICON_SIZE, height: ICON_SIZE }}
       />
     </Pressable>
   );
@@ -197,19 +249,25 @@ function StayTunedToast({ visible }: { visible: boolean }) {
   }
 
   return (
+    // Full-width wrapper + alignItems:'center', not a fixed-width box centred
+    // via left:50%+translateX — a hardcoded width squeezed the pill's inner
+    // text below its natural size, wrapping "Stay tuned" onto two lines. This
+    // way the pill always sizes to its own content, so it stays one line on
+    // any phone width.
     <View
       pointerEvents="none"
       style={{
         position: 'absolute',
         bottom: TAB_BAR_BOTTOM + TAB_BAR_HEIGHT + 16,
-        left: '50%',
-        transform: [{ translateX: -60 }],
-        width: 120,
+        left: 0,
+        right: 0,
         alignItems: 'center',
       }}
     >
       <View className="rounded-full bg-[#2a2a28] px-5 py-2.5 shadow-lg">
-        <Text className="text-[13.5px] font-medium text-white">{strings.nav.flameToast}</Text>
+        <Text className="text-[13.5px] font-medium text-white" numberOfLines={1}>
+          {strings.nav.flameToast}
+        </Text>
       </View>
     </View>
   );
