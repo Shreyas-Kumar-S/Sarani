@@ -1,14 +1,20 @@
 import axios from 'axios';
 import { SANITY_API_VERSION, SANITY_DATASET, SANITY_PROJECT_ID } from '@/constants/appConfig';
-import { AppConfig, DEFAULT_APP_CONFIG } from '@/types/appConfig';
+import { AppConfig, DEFAULT_APP_CONFIG, UpcomingFeature } from '@/types/appConfig';
 
 const QUERY =
-  '*[_type == "appConfig"][0]{minSupportedVersion,latestVersion,updateMessage,announcement,devNote,pipeline}';
+  '*[_type == "appConfig"][0]{minSupportedVersion,latestVersion,updateMessage,announcement,upcomingFeatures}';
 
-// Sanity returns null for fields that exist on the document but are empty, so
-// the raw result cannot be trusted to match AppConfig. Normalize it here — the
-// single trust boundary — so the rest of the app can rely on AppConfig's types
-// (notably non-null version strings, which the version comparator splits).
+function isUpcomingFeature(v: unknown): v is UpcomingFeature {
+  return (
+    !!v &&
+    typeof v === 'object' &&
+    typeof (v as UpcomingFeature).title === 'string' &&
+    typeof (v as UpcomingFeature).description === 'string'
+  );
+}
+
+
 function normalizeConfig(raw: Record<string, unknown>): AppConfig {
   const str = (v: unknown, fallback: string) => (typeof v === 'string' && v ? v : fallback);
   const config: AppConfig = {
@@ -17,15 +23,13 @@ function normalizeConfig(raw: Record<string, unknown>): AppConfig {
   };
   if (typeof raw.updateMessage === 'string') config.updateMessage = raw.updateMessage;
   if (raw.announcement) config.announcement = raw.announcement as AppConfig['announcement'];
-  if (typeof raw.devNote === 'string') config.devNote = raw.devNote;
-  if (Array.isArray(raw.pipeline)) config.pipeline = raw.pipeline as string[];
+  if (Array.isArray(raw.upcomingFeatures)) {
+    const features = raw.upcomingFeatures.filter(isUpcomingFeature);
+    if (features.length > 0) config.upcomingFeatures = features;
+  }
   return config;
 }
 
-// Reads the single app-config document from Sanity's cached CDN endpoint.
-// Read-only, tokenless (the dataset is public read) — never sends user data.
-// axios throws on non-2xx and on network errors, so both fall through to the
-// catch and resolve to null; callers treat null as "use cache/defaults".
 export async function fetchAppConfig(): Promise<AppConfig | null> {
   try {
     const url =

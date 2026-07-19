@@ -119,8 +119,26 @@ export default function SectionCarousel({ items, activeIndex, onChange, accentCo
   const progress = useSharedValue(activeIndex);
 
   useEffect(() => {
-    progress.value = withTiming(activeIndex, { duration: 350 });
-  }, [activeIndex, progress]);
+    // Animate via the shortest circular path rather than straight to the raw
+    // index — otherwise wrapping from the last card back to the first (or vice
+    // versa) tweens `progress` through every card in between, which reads as
+    // snapping backward instead of continuing the same rotation forward.
+    const total = items.length;
+    const current = ((progress.value % total) + total) % total;
+    let delta = activeIndex - current;
+    if (delta > total / 2) delta -= total;
+    if (delta < -total / 2) delta += total;
+
+    progress.value = withTiming(progress.value + delta, { duration: 350 }, (finished) => {
+      // Once settled, re-anchor to the plain canonical index (same rendered
+      // position, since the per-card offset math wraps by `total` either way)
+      // so `progress.value` doesn't drift further from [0, total) with every
+      // rotation over a long session.
+      if (finished) {
+        progress.value = activeIndex;
+      }
+    });
+  }, [activeIndex, progress, items.length]);
 
   const commitIndex = (nextIndex: number) => {
     const wrapped = ((nextIndex % items.length) + items.length) % items.length;

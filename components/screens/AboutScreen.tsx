@@ -6,14 +6,12 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SectionCarousel, { CarouselItem } from '@/components/ui/SectionCarousel';
 import { strings } from '@/constants/strings';
+import { useAppConfig } from '@/hooks/AppConfigStore';
 
 type SectionKey = keyof typeof strings.about.sections;
 
 const SECTION_ORDER: SectionKey[] = ['today', 'upcoming', 'someday', 'history', 'about'];
 
-// Real screenshots, one per section. To add the 5th (About) card once that
-// asset lands: drop the file in assets/images, require() it here, add its
-// key to SECTION_ORDER, and add a matching entry to strings.about.sections.
 const CAROUSEL_ITEMS: CarouselItem[] = [
   {
     key: 'today',
@@ -48,25 +46,21 @@ export default function AboutScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const accentColor = isDark ? '#9DB89A' : '#7A9B76';
+
+  // Sourced from Sanity (falls back to the shipped defaults offline) so devs
+  // can add/reorder/retire upcoming features without an app release.
+
+  const { config } = useAppConfig();
   const [activeSection, setActiveSection] = useState<SectionKey>('today');
   const active = strings.about.sections[activeSection];
   const activeIndex = SECTION_ORDER.indexOf(activeSection);
 
   return (
-    // Background is an explicit inline color, not just the NativeWind class:
-    // About is presented as a native modal (see app/_layout.tsx), which
-    // renders in a separate Android container whose window background is the
-    // splash colour (#141414 in dark) rather than our page black. Relying on
-    // the className alone let that grey show through and read as a colour
-    // "jitter" against the pure-black tab screens during the slide. Painting
-    // the same #000000 / page colour the tabs use makes the two identical.
+
     <View
       style={{ backgroundColor: isDark ? '#000000' : '#FBFAF8' }}
       className="flex-1"
     >
-      {/* Fixed header — pinned above the ScrollView (not inside it) so the
-          title and close button stay put at the top instead of scrolling
-          away with the content beneath them. */}
       <View
         style={{ paddingTop: insets.top + 16 }}
         className="flex-row items-center justify-between px-6 pb-2"
@@ -98,12 +92,8 @@ export default function AboutScreen() {
           paddingHorizontal: 24,
         }}
       >
-        <View className="my-6 items-center">
-          <Text style={{ fontSize: 56 }}>🔥</Text>
-        </View>
-
-        <Text className="mb-7 text-center text-[15px] leading-6 text-ink-secondary dark:text-ink-dark-secondary">
-          {strings.about.tagline}
+        <Text className="my-6 text-balance text-[17px] leading-6 text-ink-secondary dark:text-ink-dark-secondary">
+          {strings.about.coreIdea}
         </Text>
 
         <Text className="mb-3 text-center text-[13px] font-bold tracking-wide text-primary">
@@ -128,7 +118,7 @@ export default function AboutScreen() {
         <Text className="mb-3 text-[13px] font-bold tracking-wide text-primary">
           {strings.about.featuresComingLabel}
         </Text>
-        {strings.about.upcomingFeatures.map((feature) => (
+        {(config.upcomingFeatures ?? []).map((feature) => (
           <View
             key={feature.title}
             className="mb-3 rounded-2xl border border-primary/25 bg-primary/10 px-4 py-4"

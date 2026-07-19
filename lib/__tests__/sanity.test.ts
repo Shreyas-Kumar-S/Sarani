@@ -22,14 +22,52 @@ describe('fetchAppConfig', () => {
 
   it('normalizes null/missing version fields to safe defaults (never yields null versions)', async () => {
     mockedAxios.get.mockResolvedValue({
-      data: { result: { minSupportedVersion: null, latestVersion: null, devNote: 'hi' } },
+      data: { result: { minSupportedVersion: null, latestVersion: null, updateMessage: 'hi' } },
     });
 
     expect(await fetchAppConfig()).toEqual({
       minSupportedVersion: '0.0.0',
       latestVersion: '1.0.0',
-      devNote: 'hi',
+      updateMessage: 'hi',
     });
+  });
+
+  it('keeps well-formed upcomingFeatures and drops malformed entries', async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        result: {
+          minSupportedVersion: '1.0.0',
+          latestVersion: '1.0.0',
+          upcomingFeatures: [
+            { title: 'Streaks', description: 'Gentle nudges.' },
+            { title: 'No description' },
+            'not an object',
+            null,
+          ],
+        },
+      },
+    });
+
+    expect(await fetchAppConfig()).toEqual({
+      minSupportedVersion: '1.0.0',
+      latestVersion: '1.0.0',
+      upcomingFeatures: [{ title: 'Streaks', description: 'Gentle nudges.' }],
+    });
+  });
+
+  it('omits upcomingFeatures entirely when the field is empty or every entry is malformed', async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        result: {
+          minSupportedVersion: '1.0.0',
+          latestVersion: '1.0.0',
+          upcomingFeatures: [],
+        },
+      },
+    });
+
+    const config = await fetchAppConfig();
+    expect(config?.upcomingFeatures).toBeUndefined();
   });
 
   it('returns null when the request throws (offline or non-2xx)', async () => {

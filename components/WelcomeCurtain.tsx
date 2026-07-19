@@ -71,10 +71,17 @@ export default function WelcomeCurtain({ curtainOpacity }: WelcomeCurtainProps) 
         </Text>
       </Animated.View>
 
-      <Animated.View style={descriptionStyle} className="mb-10">
-        <Text className="text-base leading-7 text-center max-w-sm text-ink-secondary dark:text-ink-dark-secondary">
-          {strings.welcome.description}
-        </Text>
+      <Animated.View style={descriptionStyle} className="mb-10 max-w-sm">
+        {strings.welcome.description.map((paragraph, index) => (
+          <Text
+            key={index}
+            className={`text-base leading-7 text-center text-ink-secondary dark:text-ink-dark-secondary ${
+              index < strings.welcome.description.length - 1 ? 'mb-4' : ''
+            }`}
+          >
+            {paragraph}
+          </Text>
+        ))}
       </Animated.View>
     </Animated.View>
   );
