@@ -1,5 +1,6 @@
 import { AnnouncementModal } from '@/components/AnnouncementModal';
 import FloatingThemeToggle from '@/components/FloatingThemeToggle';
+import InfoButton from '@/components/InfoButton';
 import SplashScreen from '@/components/SplashScreen';
 import { UpdateGate } from '@/components/UpdateGate';
 import WelcomeCurtain from '@/components/WelcomeCurtain';
@@ -9,6 +10,7 @@ import { hasSeenWelcome, markWelcomeSeen } from '@/hooks/welcomeSeen';
 import { Stack } from 'expo-router';
 import * as SplashScreenExpo from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
 import { useColorScheme } from 'nativewind';
 import React, { useEffect, useRef, useState } from 'react';
 import { LogBox, View } from 'react-native';
@@ -35,6 +37,16 @@ export default function RootLayout() {
   // in the splash's onFinish handler, never rendered, so it needn't re-render.
   const skipWelcomeRef = useRef(false);
   const { colorScheme } = useColorScheme();
+
+  // The Android Activity's own window background sits beneath every screen —
+  // contentStyle only colours the Screen wrapper drawn on top of it. If a
+  // card/modal transition ever has a frame where neither screen has painted
+  // yet, this deeper layer (default white) shows through as a brief flash.
+  // Keeping it in sync with the current theme removes that flash regardless
+  // of which screens are transitioning.
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(colorScheme === 'dark' ? '#000000' : '#FBFAF8');
+  }, [colorScheme]);
 
   // Shared choreography: the curtain fades as the toggle docks into the corner.
   const curtainOpacity = useSharedValue(1);
@@ -113,18 +125,46 @@ export default function RootLayout() {
                   <Stack
                     screenOptions={{
                       headerShown: false,
+                      // Must match the surface-page token every screen's own root
+                      // View paints (not surface-primary/nav) — react-native-screens
+                      // uses this as the native container's base layer, visible for
+                      // a frame at the sliding screen's edge during push/modal
+                      // transitions. A mismatch here (previously #0A0A0A vs the
+                      // actual #000000 page background in dark mode) showed up as a
+                      // colour flash/jitter when the About modal opened or closed.
                       contentStyle: {
-                        backgroundColor: colorScheme === 'dark' ? '#0A0A0A' : '#FAF8F5',
+                        backgroundColor: colorScheme === 'dark' ? '#000000' : '#FBFAF8',
                       },
                     }}
                   >
                     <Stack.Screen name="index" />
                     <Stack.Screen name="(tabs)" />
+                    <Stack.Screen
+                      name="about"
+                      options={{
+                        // A card, not a modal: `presentation: 'modal'` on Android
+                        // keeps the previous tab mounted and visible *behind*, then
+                        // cross-fades the modal in at partial opacity — so mid-
+                        // transition you saw the tab underneath (e.g. "Someday" /
+                        // "This weekend") bleeding through Origins, which read as a
+                        // flicker/jitter. A card fully covers/detaches the screen
+                        // behind, so nothing shows through; `slide_from_bottom`
+                        // keeps the same upward modal-style motion. contentStyle
+                        // pins its background to the page colour the tabs paint so
+                        // there's no shade change either.
+                        presentation: 'card',
+                        animation: 'slide_from_bottom',
+                        contentStyle: {
+                          backgroundColor: colorScheme === 'dark' ? '#000000' : '#FBFAF8',
+                        },
+                      }}
+                    />
                   </Stack>
                   {phase === 'welcome' ? (
                     <WelcomeCurtain curtainOpacity={curtainOpacity} />
                   ) : null}
                   <FloatingThemeToggle dock={dock} />
+                  {phase === 'app' ? <InfoButton /> : null}
                 </View>
               </AppRevealProvider>
             )}

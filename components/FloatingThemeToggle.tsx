@@ -1,5 +1,6 @@
+import { usePathname } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, Text, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
@@ -24,6 +25,14 @@ const SIZE = 44;
 const CORNER_TOP = 24;
 const CORNER_RIGHT = 16;
 
+// This toggle is rendered as a sibling after <Stack> in the root layout, so it
+// always paints on top of whatever screen is active — including About while
+// it's still mid-transition. Reappearing the instant the route changes (before
+// the native modal has actually finished sliding away, ~300-350ms) meant it
+// popped in over About's own header while that was still visible/animating.
+// Waiting out the dismissal first avoids that overlap.
+const REAPPEAR_DELAY = 350;
+
 // A single, persistent light/dark toggle. It mounts once (at the welcome phase) and
 // never unmounts, so the same element glides from the centre of the welcome screen
 // into the top-right corner of the task sheet — no cross-route handoff needed.
@@ -31,6 +40,8 @@ export default function FloatingThemeToggle({ dock }: FloatingThemeToggleProps) 
   const { colorScheme, toggleColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
   const { width: screenW, height: screenH } = useWindowDimensions();
+  const pathname = usePathname();
+  const isAbout = pathname === '/about';
 
   // Fade + pop in on the welcome screen, matching the curtain's staggered entrance.
   const intro = useSharedValue(0);
@@ -41,6 +52,29 @@ export default function FloatingThemeToggle({ dock }: FloatingThemeToggleProps) 
     );
     // intro is a stable reanimated shared value, so the entrance runs once.
   }, [intro]);
+
+  // Fades out while the About screen is open (which has no theme toggle of
+  // its own) and back in when it closes. Fading rather than unmounting keeps
+  // this element mounted for its whole lifetime as intended, and avoids an
+  // instant snap that would fight the modal's slide transition. Reappearing
+  // is additionally delayed (see REAPPEAR_DELAY) so it doesn't fade in while
+  // About is still visually sliding away.
+  const aboutVisibility = useSharedValue(isAbout ? 0 : 1);
+  const [canInteract, setCanInteract] = useState(!isAbout);
+  useEffect(() => {
+    if (isAbout) {
+      aboutVisibility.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.cubic) });
+      setCanInteract(false);
+      return;
+    }
+
+    aboutVisibility.value = withDelay(
+      REAPPEAR_DELAY,
+      withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) })
+    );
+    const timer = setTimeout(() => setCanInteract(true), REAPPEAR_DELAY);
+    return () => clearTimeout(timer);
+  }, [isAbout, aboutVisibility]);
 
   // Resting (docked) centre vs. welcome centre — the delta is how far it travels.
   const dockedCenterX = screenW - CORNER_RIGHT - SIZE / 2;
@@ -54,13 +88,14 @@ export default function FloatingThemeToggle({ dock }: FloatingThemeToggleProps) 
     const dockScale = interpolate(dock.value, [0, 1], [1.15, 1]);
     const introScale = interpolate(intro.value, [0, 1], [0.9, 1]);
     return {
-      opacity: intro.value,
+      opacity: intro.value * aboutVisibility.value,
       transform: [{ translateX }, { translateY }, { scale: dockScale * introScale }],
     };
   });
 
   return (
     <Animated.View
+      pointerEvents={canInteract ? 'auto' : 'none'}
       style={[
         {
           position: 'absolute',
