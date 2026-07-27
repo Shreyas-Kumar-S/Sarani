@@ -1,8 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useColorScheme } from 'nativewind';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import BaseScreen from './BaseScreen';
 import GlassCard from '@/components/ui/GlassCard';
@@ -82,6 +82,23 @@ export default function TaskListScreen({
       setIsAddingTask(false);
     }
   };
+
+  // Some keyboard-dismiss gestures (iOS swipe-down, Android back) hide the
+  // keyboard without ever blurring the TextInput, so the row otherwise stays
+  // stuck open with a "focused" input the user can't close. isFocused() still
+  // reporting true here is exactly that case (a real blur, e.g. from the
+  // commit button, has already cleared it by the time this fires), so force
+  // the same close/submit path onBlur would have taken.
+  useEffect(() => {
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      if (isAddingTask && inputRef.current?.isFocused()) {
+        inputRef.current.blur();
+        handleInputBlur();
+      }
+    });
+
+    return () => hideSub.remove();
+  });
 
   const startEditingTask = (sectionIndex: number, itemIndex: number, label: string) => {
     if (!onEditTask) {
