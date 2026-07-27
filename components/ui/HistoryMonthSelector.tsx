@@ -32,9 +32,15 @@ const PILL_HEIGHT = 32;
 // across web and native.
 const SETTLE_DELAY_MS = 150;
 
-function nearestIndex(offsetX: number, count: number) {
+// Maps a horizontal scroll offset to the index of the chip nearest the
+// viewport centre, clamped to the valid range. Exported for unit testing —
+// this rounding/clamping is what decides which month a scroll settles on.
+export function nearestIndex(offsetX: number, count: number) {
   return Math.max(0, Math.min(Math.round(offsetX / ITEM_WIDTH), count - 1));
 }
+
+// Slot width per chip; scroll offset maps to an index as offset / ITEM_WIDTH.
+export const MONTH_ITEM_WIDTH = ITEM_WIDTH;
 
 type HistoryMonthSelectorProps = {
   months: HistoryMonth[];
