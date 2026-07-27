@@ -28,7 +28,9 @@ A calm, minimalist task manager built with React Native and Expo. Serein explore
 
 **Remote config, offline-safe** — a single Sanity document drives force-update (blocking) and update-nudge (dismissible) modals plus an announcement modal, all with baked-in fallback content so the app never hangs or blocks if the fetch fails or there's no connection.
 
-**Quality bar** — TypeScript throughout, ESLint + Prettier, and a co-located Jest test suite (20 suites, ~80 tests) covering the task store, rollover logic, persistence, and date/history formatting.
+**Origins / About** — a quiet in-app info screen (reachable via a small info button) explaining what Serein is and why, a walkthrough of each tab, and a teaser of what's coming next.
+
+**Quality bar** — TypeScript throughout, ESLint + Prettier, an app-wide error boundary, and a co-located Jest test suite (24 suites, ~99 tests) covering the task store, rollover logic, persistence, date/history formatting, and the History screen's month filtering.
 
 ## Feature plan
 
@@ -37,11 +39,9 @@ _Adapted from the product roadmap — reflects where the app has actually landed
 ### V1 — free core, launch-ready
 - **Gentle reminders** — opt-in notifications, no red badge counts, soft copy
 - **Recurring tasks** — daily/weekly repeat
-- **Export / backup** — plain JSON or text, so leaving is always easy
-- **Privacy-promise onboarding** — three calm intro screens ending in "No account. No cloud. Yours."
-- **Developer notes section** — a quiet "from the maker" note + a "what's coming" list, Sanity-backed
+- **Privacy-promise onboarding** — intro screens ending in "No account. No cloud. Yours."
 - **Evening wind-down ritual** (signature feature) — one soft daily notification opening a 30-second review: glance at what rolled over, add or move tomorrow's tasks, done
-- Production readiness: real icons/splash, EAS build profiles, store listings, a privacy policy, an error boundary, a real-device + accessibility pass
+- Production readiness: real icons/splash, EAS build profiles, store listings, a privacy policy, a real-device + accessibility pass
 
 ### V1.5 — "Serein Pro" (one-time unlock, no subscription)
 - **Atmosphere themes** for the animated background (Rain, Forest, Dawn, Night)

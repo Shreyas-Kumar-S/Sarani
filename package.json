@@ -7,7 +7,7 @@
     "start:clean": "npx expo start -c",
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
+    "android": "expo run:android",
     "ios": "npx expo start -c --localhost --ios",
     "web": "expo start --web",
     "lint": "expo lint",
