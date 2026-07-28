@@ -54,3 +54,6 @@ Cross-device sync, a web app, and tap-to-share are treated as one project, built
 
 ### Deliberately not planned
 Tags, priorities, projects/sub-tasks, calendar integrations, AI features, and sign-in before it's genuinely required for sync (v2). Saying no to feature-parity with the bigger apps is the point.
+
+Promotional Video:
+https://drive.google.com/file/d/1LWuj-zIE6o7-zld5EElP1Nm2RsuJ2hyZ/view?usp=sharing
