@@ -1,12 +1,15 @@
 export const strings = {
   welcome: {
-    title: 'Welcome to Serein',
+    title: 'Welcome to Sarani',
+    // Shown directly under the title, dictionary-style — the name is unfamiliar
+    // by design, so it explains itself at first contact rather than in a menu.
+    nameMeaning: 'सरणी — a path, and a row of things set down',
     tagline: 'From Attention to Intention',
     privacyPromise: 'No account. No cloud. Yours — offline, always.',
     description: [
-      'Life is unpredictable let focus on what truly matters',
-      "A quite space for thoughts, tasks and intentios",
-      'Let life stay unpredictable. Let Serein keep the thread.',
+      'Life is unpredictable — let’s focus on what truly matters.',
+      'A quiet space for thoughts, tasks and intentions.',
+      'Let life stay unpredictable. Let Sarani keep the thread.',
     ],
   },
 
@@ -40,8 +43,11 @@ export const strings = {
 
   about: {
     title: 'Origins',
+    nameLabel: 'THE NAME',
+    nameMeaning:
+      'Sarani — सरणी — is Sanskrit for a path, and also for a row: a line of things set down in order. It grows from सृ (sṛ), to flow, to move onward. Both meanings live here. Your days are the path; each day is a row of small things you meant to do.',
     coreIdea:
-      "The world runs on attention. Serein runs on intention. It doesn't try to hold down a reality that keeps changing — it just keeps a quiet record of what you meant to do, so you never lose the thread while everything else moves.",
+      "The world runs on attention. Sarani runs on intention. It doesn't try to hold down a reality that keeps changing — it just keeps a quiet record of what you meant to do, so you never lose the thread while everything else moves.",
     exploreSectionsLabel: 'EXPLORE SECTIONS',
     featuresComingLabel: 'FEATURES TO COME',
     sections: {
@@ -90,11 +96,9 @@ export const strings = {
     toggleTheme: 'Toggle color theme',
     commitTask: 'Add this task',
     commitEdit: 'Save changes',
-    openAbout: 'About Serein',
+    openAbout: 'About Sarani',
     closeAbout: 'Close',
     flameTeaser: 'Coming soon',
-    // Prefix, not a full phrase — combined with a task's own label at the
-    // call site (e.g. `${editTaskPrefix} ${label}`) since it's per-row.
     editTaskPrefix: 'Edit',
     editTaskInput: 'Edit task text',
     newTaskInput: 'New task text',
@@ -110,9 +114,9 @@ export const strings = {
   update: {
     blockedTitle: 'Time for a fresh start',
     blockedBody: 'This version has gently retired. Update to keep moving forward.',
-    button: 'Update Serein',
+    button: 'Update Sarani',
     nudgeTitle: 'A new version is gently waiting',
-    nudgeBody: "When you have a moment, there's a fresh update for Serein.",
+    nudgeBody: "When you have a moment, there's a fresh update for Sarani.",
     later: 'Later',
   },
 } as const;

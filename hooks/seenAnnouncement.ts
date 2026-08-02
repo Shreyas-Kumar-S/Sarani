@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const KEY = 'serein.seenAnnouncements.v1';
+const KEY = 'sarani.seenAnnouncements.v1';
 
 export async function isSeen(id: string): Promise<boolean> {
   const raw = await AsyncStorage.getItem(KEY);

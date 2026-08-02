@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Serein is a calm, minimalist task manager built with React Native + Expo SDK 54. The guiding aesthetic — "move gently forward" — influences both UX and code style: prefer quiet, deliberate choices over clever ones.
+Sarani is a calm, minimalist task manager built with React Native + Expo SDK 54. The guiding aesthetic — "move gently forward" — influences both UX and code style: prefer quiet, deliberate choices over clever ones.
 
 ## Commands
 

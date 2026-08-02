@@ -116,7 +116,7 @@ exports[`SplashLogo SplashLogoDark matches snapshot (dark mode) 1`] = `
       }
     >
       <RNSVGTSpan
-        content="Serein"
+        content="Sarani"
         dx={[]}
         dy={[]}
         fill={
@@ -301,7 +301,7 @@ exports[`SplashLogo SplashLogoLight matches snapshot (light mode) 1`] = `
       }
     >
       <RNSVGTSpan
-        content="Serein"
+        content="Sarani"
         dx={[]}
         dy={[]}
         fill={

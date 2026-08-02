@@ -41,7 +41,7 @@ export async function fetchAppConfig(): Promise<AppConfig | null> {
     });
     return res.data.result ? normalizeConfig(res.data.result) : null;
   } catch (error) {
-    console.warn('[serein] failed to fetch app config', error);
+    console.warn('[sarani] failed to fetch app config', error);
     return null;
   }
 }

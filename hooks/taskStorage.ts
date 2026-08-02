@@ -3,7 +3,7 @@ import type { TabKey } from './TaskStore';
 import { TaskItem } from '@/types/task';
 
 // Versioned so a future shape change can migrate rather than silently break.
-const STORAGE_KEY = 'serein.tasks.v1';
+const STORAGE_KEY = 'sarani.tasks.v1';
 
 const EMPTY: Record<TabKey, TaskItem[]> = {
   today: [],
@@ -40,7 +40,7 @@ export async function loadTasks(): Promise<PersistedState | null> {
       lastOpenedDate: parsed.lastOpenedDate,
     };
   } catch (error) {
-    console.warn('[serein] failed to load tasks', error);
+    console.warn('[sarani] failed to load tasks', error);
     return null;
   }
 }
@@ -49,6 +49,6 @@ export async function saveTasks(state: PersistedState): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (error) {
-    console.warn('[serein] failed to save tasks', error);
+    console.warn('[sarani] failed to save tasks', error);
   }
 }

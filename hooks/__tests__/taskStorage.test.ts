@@ -28,7 +28,7 @@ describe('taskStorage', () => {
 
   it('returns null on malformed stored data', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    await AsyncStorage.setItem('serein.tasks.v1', 'not json{');
+    await AsyncStorage.setItem('sarani.tasks.v1', 'not json{');
 
     expect(await loadTasks()).toBeNull();
     expect(warn).toHaveBeenCalled();
@@ -38,7 +38,7 @@ describe('taskStorage', () => {
 
   it('merges over empty defaults so a missing tab key never crashes', async () => {
     await AsyncStorage.setItem(
-      'serein.tasks.v1',
+      'sarani.tasks.v1',
       JSON.stringify({ tasksByTab: { today: [{ label: 'x' }] }, lastOpenedDate: '2026-07-02' })
     );
 

@@ -1,8 +1,8 @@
-# Serein
+# Sarani
 
 **Move Gently Forward**
 
-A calm, minimalist task manager built with React Native and Expo. Serein explores how software can feel quiet, predictable, and respectful of attention — both in UX and in engineering. No account, no cloud, no streaks to break: your tasks stay on your device.
+A calm, minimalist task manager built with React Native and Expo. Sarani explores how software can feel quiet, predictable, and respectful of attention — both in UX and in engineering. No account, no cloud, no streaks to break: your tasks stay on your device.
 
 ## Tech stack
 
@@ -28,7 +28,7 @@ A calm, minimalist task manager built with React Native and Expo. Serein explore
 
 **Remote config, offline-safe** — a single Sanity document drives force-update (blocking) and update-nudge (dismissible) modals plus an announcement modal, all with baked-in fallback content so the app never hangs or blocks if the fetch fails or there's no connection.
 
-**Origins / About** — a quiet in-app info screen (reachable via a small info button) explaining what Serein is and why, a walkthrough of each tab, and a teaser of what's coming next.
+**Origins / About** — a quiet in-app info screen (reachable via a small info button) explaining what Sarani is and why, a walkthrough of each tab, and a teaser of what's coming next.
 
 **Quality bar** — TypeScript throughout, ESLint + Prettier, an app-wide error boundary, and a co-located Jest test suite (24 suites, ~99 tests) covering the task store, rollover logic, persistence, date/history formatting, and the History screen's month filtering.
 
@@ -43,7 +43,7 @@ _Adapted from the product roadmap — reflects where the app has actually landed
 - **Evening wind-down ritual** (signature feature) — one soft daily notification opening a 30-second review: glance at what rolled over, add or move tomorrow's tasks, done
 - Production readiness: real icons/splash, EAS build profiles, store listings, a privacy policy, a real-device + accessibility pass
 
-### V1.5 — "Serein Pro" (one-time unlock, no subscription)
+### V1.5 — "Sarani Pro" (one-time unlock, no subscription)
 - **Atmosphere themes** for the animated background (Rain, Forest, Dawn, Night)
 - **Home-screen widgets** (iOS + Android)
 - **Encrypted backup + import**

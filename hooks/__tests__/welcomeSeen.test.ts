@@ -16,7 +16,7 @@ describe('welcomeSeen', () => {
   });
 
   it('treats a corrupt/missing flag as not seen', async () => {
-    await AsyncStorage.setItem('serein.hasSeenWelcome.v1', 'nonsense');
+    await AsyncStorage.setItem('sarani.hasSeenWelcome.v1', 'nonsense');
     expect(await hasSeenWelcome()).toBe(false);
   });
 });

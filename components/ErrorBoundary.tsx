@@ -39,7 +39,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: unknown, info: { componentStack?: string }) {
-    console.error('[serein] uncaught render error', error, info.componentStack);
+    console.error('[sarani] uncaught render error', error, info.componentStack);
   }
 
   reset = () => {

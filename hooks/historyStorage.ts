@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TaskItem } from '@/types/task';
 
 // Versioned so a future shape change can migrate rather than silently break.
-const STORAGE_KEY = 'serein.history.v1';
+const STORAGE_KEY = 'sarani.history.v1';
 
 export type HistoryByDate = Record<string, TaskItem[]>;
 
@@ -33,7 +33,7 @@ export async function loadHistory(): Promise<PersistedHistory | null> {
       otherCompletions: { ...EMPTY.otherCompletions, ...parsed.otherCompletions },
     };
   } catch (error) {
-    console.warn('[serein] failed to load history', error);
+    console.warn('[sarani] failed to load history', error);
     return null;
   }
 }
@@ -42,6 +42,6 @@ export async function saveHistory(state: PersistedHistory): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (error) {
-    console.warn('[serein] failed to save history', error);
+    console.warn('[sarani] failed to save history', error);
   }
 }

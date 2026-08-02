@@ -16,7 +16,7 @@ describe('appConfigStorage', () => {
   });
   it('treats corrupt cache as empty', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    await AsyncStorage.setItem('serein.appConfig.v1', 'not json {');
+    await AsyncStorage.setItem('sarani.appConfig.v1', 'not json {');
     expect(await loadCachedConfig()).toBeNull();
     warn.mockRestore();
   });

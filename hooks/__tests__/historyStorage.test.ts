@@ -24,7 +24,7 @@ describe('historyStorage', () => {
 
   it('returns null on malformed stored data', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    await AsyncStorage.setItem('serein.history.v1', 'not json{');
+    await AsyncStorage.setItem('sarani.history.v1', 'not json{');
 
     expect(await loadHistory()).toBeNull();
     expect(warn).toHaveBeenCalled();
@@ -34,7 +34,7 @@ describe('historyStorage', () => {
 
   it('merges over empty defaults so a missing key never crashes', async () => {
     await AsyncStorage.setItem(
-      'serein.history.v1',
+      'sarani.history.v1',
       JSON.stringify({ todaySnapshots: { '2026-06-14': [] } })
     );
 

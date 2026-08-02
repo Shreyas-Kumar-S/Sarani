@@ -20,7 +20,7 @@ const useWithHistory = () => ({
 });
 
 const seed = (state: unknown) =>
-  AsyncStorage.setItem('serein.tasks.v1', JSON.stringify(state));
+  AsyncStorage.setItem('sarani.tasks.v1', JSON.stringify(state));
 
 beforeEach(async () => {
   await AsyncStorage.clear();

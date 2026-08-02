@@ -6,6 +6,12 @@
       "runtimeExecutable": "yarn",
       "runtimeArgs": ["web"],
       "port": 8081
+    },
+    {
+      "name": "web-alt",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["web", "--port", "8090"],
+      "port": 8090
     }
   ]
 }
