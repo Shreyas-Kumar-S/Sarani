@@ -35,7 +35,6 @@ export default function RootLayout() {
   const skipWelcomeRef = useRef(false);
   const { colorScheme } = useColorScheme();
 
-
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(colorScheme === 'dark' ? '#000000' : '#FBFAF8');
   }, [colorScheme]);

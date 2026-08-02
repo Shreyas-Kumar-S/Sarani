@@ -7,15 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icons/app-icon-light.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/icons/app-icon-light.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FAF8F5",
-      "dark": {
-        "image": "./assets/icons/app-icon-dark.png",
-        "backgroundColor": "#141414"
-      }
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.shreyas.sarani",
@@ -46,11 +37,16 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#FAF8F5",
-          "dark": { "image": "./assets/icons/app-icon-dark.png", "backgroundColor": "#141414" }
+          "dark": {
+            "image": "./assets/icons/app-icon-dark.png",
+            "backgroundColor": "#141414"
+          }
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-image",
+      "expo-status-bar"
     ],
     "extra": {
       "router": {},

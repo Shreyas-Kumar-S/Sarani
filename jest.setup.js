@@ -1,11 +1,10 @@
 import "@testing-library/jest-native/extend-expect";
 
-// ✅ Mock react-native-reanimated (THIS is enough)
-jest.mock("react-native-reanimated", () => {
-  const Reanimated = require("react-native-reanimated/mock");
-  Reanimated.default.call = () => {};
-  return Reanimated;
-});
+// See jest/reanimatedMock.cjs — Reanimated 4's own mock entry can no longer be
+// loaded under jest, so this is a local stand-in with the same semantics.
+jest.mock("react-native-reanimated", () =>
+  require("./jest/reanimatedMock.cjs")
+);
 
 // ✅ Mock NativeWind
 jest.mock("nativewind", () => ({

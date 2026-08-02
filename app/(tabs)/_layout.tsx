@@ -4,12 +4,20 @@ import AnimatedBackground from '@/components/ui/AnimatedBackground';
 import { strings } from '@/constants/strings';
 import { useAppRevealed } from '@/hooks/AppReveal';
 import { TabKey, TaskProvider, useTabAllComplete } from '@/hooks/TaskStore';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { BottomTabBarProps } from 'expo-router/js-tabs';
 import { BlurView } from 'expo-blur';
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import {
+  ColorValue,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -41,7 +49,9 @@ const TAB_BAR_SLOTS = ['today', 'upcoming', 'flame', 'someday', 'history'] as co
 
 // Reflects a tab's task state: empty square until every task in the tab is
 // checked off, then a ticked square.
-function TaskTabIcon({ tab, color, size }: { tab: TabKey; color: string; size: number }) {
+// `color` is ColorValue, not string: RN 0.85 widened the tabBarIcon callback's
+// type to admit platform colors (OpaqueColorValue), which Feather accepts too.
+function TaskTabIcon({ tab, color, size }: { tab: TabKey; color: ColorValue; size: number }) {
   const allComplete = useTabAllComplete(tab);
   return <Feather name={allComplete ? 'check-square' : 'square'} size={size} color={color} />;
 }

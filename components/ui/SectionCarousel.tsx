@@ -134,7 +134,6 @@ export default function SectionCarousel({
   const progress = useSharedValue(activeIndex);
 
   useEffect(() => {
-
     const total = items.length;
     const current = ((progress.value % total) + total) % total;
     let delta = activeIndex - current;
@@ -142,7 +141,6 @@ export default function SectionCarousel({
     if (delta < -total / 2) delta += total;
 
     progress.value = withTiming(progress.value + delta, { duration: 350 }, (finished) => {
-
       if (finished) {
         progress.value = activeIndex;
       }

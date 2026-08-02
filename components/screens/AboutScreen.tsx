@@ -85,7 +85,6 @@ export default function AboutScreen() {
           paddingHorizontal: 24,
         }}
       >
-
         <Text className="mb-3 text-[13px] font-bold tracking-wide text-primary">
           {strings.about.nameLabel}
         </Text>
