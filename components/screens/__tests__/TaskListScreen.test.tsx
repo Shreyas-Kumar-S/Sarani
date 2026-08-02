@@ -61,16 +61,20 @@ describe('TaskListScreen add-task flow', () => {
     expect(stillOpen.props.value).toBe('');
   });
 
-  it('keeps the input open after keyboard submit for rapid entry', () => {
+  // Rapid entry is the commit button's job now. The keyboard's Done key
+  // deliberately falls through to the default blur so that "Done" finishes and
+  // closes the row — see the blur test below.
+  it('keeps the input open for rapid entry when committing with the button', () => {
     const onAddTask = jest.fn();
     const api = renderScreen(<TaskListScreen {...baseProps} onAddTask={onAddTask} />);
     const input = openInput(api);
 
     fireEvent.changeText(input, 'first');
-    fireEvent(input, 'submitEditing');
+    fireEvent.press(api.getByLabelText(strings.a11y.commitTask));
+
     const stillOpen = api.getByPlaceholderText(strings.tasks.newTaskPlaceholder);
     fireEvent.changeText(stillOpen, 'second');
-    fireEvent(stillOpen, 'submitEditing');
+    fireEvent.press(api.getByLabelText(strings.a11y.commitTask));
 
     expect(onAddTask).toHaveBeenNthCalledWith(1, 'first');
     expect(onAddTask).toHaveBeenNthCalledWith(2, 'second');

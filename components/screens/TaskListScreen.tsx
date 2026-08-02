@@ -43,6 +43,8 @@ export default function TaskListScreen({
   const [editing, setEditing] = useState<{ section: number; item: number } | null>(null);
   const [editDraft, setEditDraft] = useState('');
   const inputRef = useRef<TextInput>(null);
+  const editInputRef = useRef<TextInput>(null);
+  const scrollRef = useRef<ScrollView>(null);
   // Set on the commit button's pressIn (which fires before the input's blur)
   // so the blur handler knows to keep the input open for rapid entry.
   const keepInputOpenRef = useRef(false);
@@ -56,8 +58,10 @@ export default function TaskListScreen({
       return;
     }
 
+    // The input mounts with autoFocus, which raises the keyboard reliably. The
+    // previous requestAnimationFrame(focus) raced the mount and frequently
+    // lost, leaving the row open with no keyboard.
     setIsAddingTask(true);
-    requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   const submitTask = () => {
@@ -83,22 +87,17 @@ export default function TaskListScreen({
     }
   };
 
-  // Some keyboard-dismiss gestures (iOS swipe-down, Android back) hide the
-  // keyboard without ever blurring the TextInput, so the row otherwise stays
-  // stuck open with a "focused" input the user can't close. isFocused() still
-  // reporting true here is exactly that case (a real blur, e.g. from the
-  // commit button, has already cleared it by the time this fires), so force
-  // the same close/submit path onBlur would have taken.
+  // Bring a freshly-opened input above the keyboard. automaticallyAdjustKeyboard-
+  // Insets reserves the space, but on a long list the add row is already below
+  // the fold, so it still needs scrolling to.
   useEffect(() => {
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      if (isAddingTask && inputRef.current?.isFocused()) {
-        inputRef.current.blur();
-        handleInputBlur();
-      }
-    });
+    if (!isAddingTask) {
+      return;
+    }
 
-    return () => hideSub.remove();
-  });
+    const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+    return () => clearTimeout(timer);
+  }, [isAddingTask]);
 
   const startEditingTask = (sectionIndex: number, itemIndex: number, label: string) => {
     if (!onEditTask) {
@@ -126,10 +125,54 @@ export default function TaskListScreen({
     setEditDraft('');
   };
 
+  // Both handlers close over current drafts, so they're mirrored into refs and
+  // the listener below subscribes exactly once. Previously this effect had no
+  // dependency array at all and tore down/re-subscribed on every render.
+  const handleInputBlurRef = useRef(handleInputBlur);
+  const commitEditRef = useRef(commitEdit);
+  useEffect(() => {
+    handleInputBlurRef.current = handleInputBlur;
+    commitEditRef.current = commitEdit;
+  });
+
+  // Some keyboard-dismiss gestures (iOS swipe-down, Android back) hide the
+  // keyboard without ever blurring the TextInput, so a row otherwise stays
+  // stuck open with a "focused" input the user can't close. isFocused() still
+  // reporting true here is exactly that case (a real blur, e.g. from the
+  // commit button, has already cleared it by the time this fires), so force
+  // the same close path that onBlur would have taken. This covers the edit row
+  // too, which previously had no such safety net and could be left stranded.
+  useEffect(() => {
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      if (inputRef.current?.isFocused()) {
+        inputRef.current.blur();
+        handleInputBlurRef.current();
+      }
+
+      if (editInputRef.current?.isFocused()) {
+        editInputRef.current.blur();
+        commitEditRef.current();
+      }
+    });
+
+    return () => hideSub.remove();
+  }, []);
+
   return (
     <BaseScreen className="pt-2">
       <Header title={greeting} />
-      <ScrollView contentContainerClassName="pt-5" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerClassName="pt-5"
+        showsVerticalScrollIndicator={false}
+        // Without these the keyboard simply covers the add row once the list is
+        // long enough (iOS never moved anything), and taps aimed at the commit
+        // button are swallowed by the scroll view's keyboard-dismiss responder,
+        // which defaults to "never".
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+      >
         <GlassCard className="px-5 py-6">
           {sections.map((section, sectionIndex) => (
             <View
@@ -148,6 +191,7 @@ export default function TaskListScreen({
                       <View className="flex-row items-center py-[13px]">
                         <TextInput
                           accessibilityLabel={strings.a11y.editTaskInput}
+                          ref={editInputRef}
                           value={editDraft}
                           onChangeText={setEditDraft}
                           onSubmitEditing={commitEdit}
@@ -203,9 +247,13 @@ export default function TaskListScreen({
                       ref={inputRef}
                       value={draftTask}
                       onChangeText={setDraftTask}
-                      onSubmitEditing={submitTask}
                       onBlur={handleInputBlur}
-                      submitBehavior="submit"
+                      // No onSubmitEditing/submitBehavior: letting Done fall
+                      // through to the default blur makes blur the single
+                      // commit path, so "Done" genuinely finishes and closes
+                      // the row. Rapid entry is still available through the
+                      // arrow button, which keeps the row open deliberately.
+                      autoFocus
                       returnKeyType="done"
                       placeholder={strings.tasks.newTaskPlaceholder}
                       placeholderTextColor={isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.28)'}
