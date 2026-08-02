@@ -99,6 +99,111 @@ describe('TaskStore', () => {
     expect(result.current.upcoming.tasks).toEqual([{ label: 'carry', checked: false }]);
   });
 
+  describe('completed tasks sink to the bottom', () => {
+    const seedThree = () =>
+      seed({
+        tasksByTab: {
+          today: [
+            { label: 'alpha', checked: false },
+            { label: 'bravo', checked: true },
+            { label: 'charlie', checked: false },
+          ],
+          upcoming: [],
+          someday: [],
+        },
+        lastOpenedDate: todayString(),
+      });
+
+    it('orders unchecked before checked, each keeping insertion order', async () => {
+      await seedThree();
+      const { result } = renderHook(useBoth, { wrapper });
+      await waitFor(() => expect(result.current.today.tasks).toHaveLength(3));
+
+      expect(result.current.today.tasks.map((task) => task.label)).toEqual([
+        'alpha',
+        'charlie',
+        'bravo',
+      ]);
+    });
+
+    // The regression that matters: mutations are keyed on the *stored* index,
+    // so a broken display->stored mapping would silently hit the wrong task
+    // rather than throw.
+    it('applies mutations to the task at the given display position', async () => {
+      await seedThree();
+      const { result } = renderHook(useBoth, { wrapper });
+      await waitFor(() => expect(result.current.today.tasks).toHaveLength(3));
+
+      // Display index 1 is 'charlie' (stored index 2), not 'bravo'.
+      act(() => {
+        result.current.today.removeTask(0, 1);
+      });
+
+      expect(result.current.today.tasks.map((task) => task.label)).toEqual(['alpha', 'bravo']);
+    });
+
+    it('returns a task to its original position when un-checked', async () => {
+      await seed({
+        tasksByTab: {
+          today: [
+            { label: 'alpha', checked: false },
+            { label: 'bravo', checked: false },
+            { label: 'charlie', checked: false },
+          ],
+          upcoming: [],
+          someday: [],
+        },
+        lastOpenedDate: todayString(),
+      });
+      const { result } = renderHook(useBoth, { wrapper });
+      await waitFor(() => expect(result.current.today.tasks).toHaveLength(3));
+
+      act(() => {
+        result.current.today.toggleTask(0, 1);
+      });
+      expect(result.current.today.tasks.map((task) => task.label)).toEqual([
+        'alpha',
+        'charlie',
+        'bravo',
+      ]);
+
+      // 'bravo' now sits at display index 2; un-checking must restore it to
+      // the middle, which only holds if stored order was never disturbed.
+      act(() => {
+        result.current.today.toggleTask(0, 2);
+      });
+      expect(result.current.today.tasks.map((task) => task.label)).toEqual([
+        'alpha',
+        'bravo',
+        'charlie',
+      ]);
+    });
+
+    it('leaves history mirroring stored order, not display order', async () => {
+      await seed({
+        tasksByTab: {
+          today: [
+            { label: 'alpha', checked: true },
+            { label: 'bravo', checked: false },
+          ],
+          upcoming: [],
+          someday: [],
+        },
+        lastOpenedDate: todayString(),
+      });
+      const { result } = renderHook(useWithHistory, { wrapper });
+      await waitFor(() => expect(result.current.today.tasks).toHaveLength(2));
+
+      expect(result.current.today.tasks.map((task) => task.label)).toEqual(['bravo', 'alpha']);
+      await waitFor(() =>
+        expect(result.current.history.getDay(todayString()).map((task) => task.label)).toEqual([
+          'alpha',
+          'bravo',
+        ])
+      );
+    });
+  });
+
   describe('history', () => {
     it("mirrors Today's live list into today's history entry", async () => {
       await seed({

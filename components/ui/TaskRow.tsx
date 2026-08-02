@@ -37,8 +37,14 @@ export default function TaskRow({
     action();
   };
 
+  // Row rhythm is deliberately tighter than it looks like it should be. At
+  // 21px/28px leading with 13px padding a row was ~54px, so barely 9 fit on a
+  // phone before scrolling — reported as "you can't have a list of 10". Most of
+  // that was leading and padding rather than glyph size, so this trims those
+  // hardest and only drops the text to 17px, which is iOS's own body size and
+  // still comfortably legible.
   const row = (
-    <View className="flex-row items-center py-[13px]">
+    <View className="flex-row items-center py-[10px]">
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: Boolean(checked) }}
@@ -60,7 +66,7 @@ export default function TaskRow({
         onPress={onLabelPress}
       >
         <Text
-          className={`text-[21px] leading-7 text-ink-secondary dark:text-ink-dark-secondary ${
+          className={`text-[17px] leading-6 text-ink-secondary dark:text-ink-dark-secondary ${
             checked ? 'line-through opacity-55' : ''
           }`}
         >
@@ -81,7 +87,7 @@ export default function TaskRow({
         </Pressable>
       ) : null}
       {time ? (
-        <Text className="ml-3 text-[17px] text-ink-tertiary dark:text-ink-dark-tertiary">
+        <Text className="ml-3 text-[15px] text-ink-tertiary dark:text-ink-dark-tertiary">
           {time}
         </Text>
       ) : null}

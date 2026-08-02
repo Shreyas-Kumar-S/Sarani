@@ -233,18 +233,43 @@ function useTaskStore() {
 }
 
 // Screen-facing hook — mirrors the section/item signature TaskListScreen expects.
+//
+// Completed tasks sink to the bottom so the next actionable item stays in view
+// instead of being pushed below a wall of finished ones. This is *display*
+// order only: the stored array keeps insertion order, so un-checking a task
+// returns it to where it was, and History (which mirrors tasksByTab.today
+// verbatim) is unaffected.
+//
+// Every mutation in the store is keyed on the task's index in that stored
+// array, so reordering for display without translating indices would send a
+// toggle to whichever task happened to land in that slot. `order` maps a
+// displayed position back to its stored one, and every callback below goes
+// through it.
 export function useTaskList(tab: TabKey) {
   const { tasksByTab, addTask, toggleTask, removeTask, editTask, promoteToUpcoming } =
     useTaskStore();
+  const stored = tasksByTab[tab];
+
+  const { tasks, order } = useMemo(() => {
+    // Array.prototype.sort is stable, so each group keeps its insertion order.
+    const indices = stored.map((_, index) => index);
+    indices.sort((a, b) => Number(stored[a].checked) - Number(stored[b].checked));
+    return { tasks: indices.map((index) => stored[index]), order: indices };
+  }, [stored]);
+
+  const storedIndex = (displayIndex: number) => order[displayIndex] ?? displayIndex;
+
   return {
-    tasks: tasksByTab[tab],
+    tasks,
     addTask: (label: string) => addTask(tab, label),
-    toggleTask: (_sectionIndex: number, itemIndex: number) => toggleTask(tab, itemIndex),
-    removeTask: (_sectionIndex: number, itemIndex: number) => removeTask(tab, itemIndex),
+    toggleTask: (_sectionIndex: number, itemIndex: number) =>
+      toggleTask(tab, storedIndex(itemIndex)),
+    removeTask: (_sectionIndex: number, itemIndex: number) =>
+      removeTask(tab, storedIndex(itemIndex)),
     editTask: (_sectionIndex: number, itemIndex: number, label: string) =>
-      editTask(tab, itemIndex, label),
+      editTask(tab, storedIndex(itemIndex), label),
     // Only meaningful on the Today tab; other tabs simply never wire it.
-    promoteTask: (itemIndex: number) => promoteToUpcoming(itemIndex),
+    promoteTask: (itemIndex: number) => promoteToUpcoming(storedIndex(itemIndex)),
   };
 }
 

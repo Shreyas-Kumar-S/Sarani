@@ -183,12 +183,19 @@ export default function TaskListScreen({
               <View className="rounded-[22px] px-4 py-2">
                 {section.items.map((item, index) => (
                   <Animated.View
-                    key={`${section.title}-${item.label}-${index}`}
+                    // Deliberately not index-keyed: completed tasks sink, so an
+                    // index-based key would change for every row below the one
+                    // just checked, remounting them all and replaying their
+                    // entrance animation. Keyed on the label, React moves the
+                    // existing row instead. (Two identical labels in one tab
+                    // would collide, but the effect is cosmetic — mutations are
+                    // index-based, not key-based.)
+                    key={`${section.title}-${item.label}`}
                     entering={FadeInDown.duration(220)}
                     className="border-b border-ink-quaternary/15 dark:border-ink-dark-quaternary/15 last:border-b-0"
                   >
                     {editing?.section === sectionIndex && editing?.item === index ? (
-                      <View className="flex-row items-center py-[13px]">
+                      <View className="flex-row items-center py-[10px]">
                         <TextInput
                           accessibilityLabel={strings.a11y.editTaskInput}
                           ref={editInputRef}
@@ -201,7 +208,7 @@ export default function TaskListScreen({
                           placeholderTextColor={
                             isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.28)'
                           }
-                          className="flex-1 text-[21px] leading-7 text-ink-secondary dark:text-ink-dark-secondary"
+                          className="flex-1 text-[17px] leading-6 text-ink-secondary dark:text-ink-dark-secondary"
                         />
                         <Pressable
                           accessibilityRole="button"
@@ -241,7 +248,7 @@ export default function TaskListScreen({
                   </Animated.View>
                 ))}
                 {canAddTasks && isAddingTask && sectionIndex === 0 ? (
-                  <View className="flex-row items-center border-t border-ink-quaternary/15 dark:border-ink-dark-quaternary/15 py-[13px]">
+                  <View className="flex-row items-center border-t border-ink-quaternary/15 dark:border-ink-dark-quaternary/15 py-[10px]">
                     <TextInput
                       accessibilityLabel={strings.a11y.newTaskInput}
                       ref={inputRef}
@@ -257,7 +264,7 @@ export default function TaskListScreen({
                       returnKeyType="done"
                       placeholder={strings.tasks.newTaskPlaceholder}
                       placeholderTextColor={isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.28)'}
-                      className="flex-1 text-[21px] leading-7 text-ink-secondary dark:text-ink-dark-secondary"
+                      className="flex-1 text-[17px] leading-6 text-ink-secondary dark:text-ink-dark-secondary"
                     />
                     <Pressable
                       accessibilityRole="button"
