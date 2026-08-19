@@ -11,6 +11,7 @@ import SectionTitle from '@/components/ui/SectionTitle';
 import TaskRow from '@/components/ui/TaskRow';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { strings } from '@/constants/strings';
+import { scrollTargetForRow } from '@/lib/scrollToRow';
 import { TaskSection } from '@/types/task';
 
 type TaskListScreenProps = {
@@ -45,6 +46,7 @@ export default function TaskListScreen({
   const inputRef = useRef<TextInput>(null);
   const editInputRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const editingRowRef = useRef<View>(null);
   // Set on the commit button's pressIn (which fires before the input's blur)
   // so the blur handler knows to keep the input open for rapid entry.
   const keepInputOpenRef = useRef(false);
@@ -98,6 +100,40 @@ export default function TaskListScreen({
     const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
     return () => clearTimeout(timer);
   }, [isAddingTask]);
+
+  // Brings the row being edited above the keyboard. automaticallyAdjustKeyboard-
+  // Insets (on the ScrollView below) reserves the space but never scrolls
+  // off-screen content into it — same problem the add row above already
+  // solved with scrollToEnd(), except an edited row can be anywhere in the
+  // list, not always at the bottom, so this measures its actual position.
+  useEffect(() => {
+    if (!editing) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const scrollNode = scrollRef.current;
+      const rowNode = editingRowRef.current;
+      if (!scrollNode || !rowNode) {
+        return;
+      }
+
+      // measureLayout wants a host-component ref to measure against. If
+      // `scrollNode` (the ScrollView instance) isn't accepted directly by the
+      // installed RN/TS version, swap in `scrollNode.getScrollResponder()` or
+      // measure against a plain `View` wrapped around the ScrollView's
+      // children instead — confirm whichever is needed on-device, since this
+      // API has shifted across RN versions and jest's mocked native layer
+      // can't catch a mismatch here (see Step 7).
+      rowNode.measureLayout(
+        scrollNode as unknown as React.ComponentRef<typeof View>,
+        (_x, y) => scrollNode.scrollTo({ y: scrollTargetForRow(y), animated: true }),
+        () => {}
+      );
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [editing]);
 
   const startEditingTask = (sectionIndex: number, itemIndex: number, label: string) => {
     if (!onEditTask) {
@@ -195,7 +231,7 @@ export default function TaskListScreen({
                     className="border-b border-ink-quaternary/15 dark:border-ink-dark-quaternary/15 last:border-b-0"
                   >
                     {editing?.section === sectionIndex && editing?.item === index ? (
-                      <View className="flex-row items-center py-[10px]">
+                      <View ref={editingRowRef} className="flex-row items-center py-[10px]">
                         <TextInput
                           accessibilityLabel={strings.a11y.editTaskInput}
                           ref={editInputRef}
