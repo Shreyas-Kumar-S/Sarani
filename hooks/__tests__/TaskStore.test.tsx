@@ -58,6 +58,8 @@ describe('TaskStore', () => {
     expect(result.current.today.tasks[0]).toEqual({
       label: 'undone',
       checked: false,
+      // Backfilled by loadTasks' createdAt migration since the seeded task had none.
+      createdAt: todayString(),
       carriedOver: true,
     });
   });
@@ -75,7 +77,25 @@ describe('TaskStore', () => {
       result.current.today.editTask(0, 0, 'new words');
     });
 
-    expect(result.current.today.tasks).toEqual([{ label: 'new words', checked: false }]);
+    expect(result.current.today.tasks).toEqual([
+      { label: 'new words', checked: false, createdAt: todayString() },
+    ]);
+  });
+
+  it('addTask stamps the new task with createdAt', async () => {
+    await seed({
+      tasksByTab: { today: [], upcoming: [], someday: [] },
+      lastOpenedDate: todayString(),
+    });
+
+    const { result } = renderHook(useBoth, { wrapper });
+    await waitFor(() => expect(result.current.today.tasks).toHaveLength(0));
+
+    act(() => {
+      result.current.today.addTask('stretch');
+    });
+
+    expect(result.current.today.tasks[0].createdAt).toBe(todayString());
   });
 
   it('promoteTask moves a Today task to Upcoming and clears the carriedOver flag', async () => {
@@ -96,7 +116,9 @@ describe('TaskStore', () => {
     });
 
     expect(result.current.today.tasks).toHaveLength(0);
-    expect(result.current.upcoming.tasks).toEqual([{ label: 'carry', checked: false }]);
+    expect(result.current.upcoming.tasks).toEqual([
+      { label: 'carry', checked: false, createdAt: todayString() },
+    ]);
   });
 
   describe('completed tasks sink to the bottom', () => {
@@ -216,7 +238,7 @@ describe('TaskStore', () => {
 
       await waitFor(() =>
         expect(result.current.history.getDay(todayString())).toEqual([
-          { label: 'read', checked: false },
+          { label: 'read', checked: false, createdAt: todayString() },
         ])
       );
       expect(result.current.history.datesWithHistory).toContain(todayString());
@@ -227,7 +249,7 @@ describe('TaskStore', () => {
 
       await waitFor(() =>
         expect(result.current.history.getDay(todayString())).toEqual([
-          { label: 'read', checked: true },
+          { label: 'read', checked: true, createdAt: todayString() },
         ])
       );
     });
@@ -283,7 +305,7 @@ describe('TaskStore', () => {
       // carriedOver flag and all — that flag only gets shed once promoted.
       await waitFor(() =>
         expect(result.current.history.getDay(todayString())).toEqual([
-          { label: 'carry', checked: true, carriedOver: true },
+          { label: 'carry', checked: true, createdAt: todayString(), carriedOver: true },
         ])
       );
 
@@ -292,9 +314,13 @@ describe('TaskStore', () => {
       });
 
       expect(result.current.today.tasks).toHaveLength(0);
-      expect(result.current.upcoming.tasks).toEqual([{ label: 'carry', checked: true }]);
+      expect(result.current.upcoming.tasks).toEqual([
+        { label: 'carry', checked: true, createdAt: todayString() },
+      ]);
       // The task is gone from Today's live list, but promoting it must not
-      // erase today's record of having finished it.
+      // erase today's record of having finished it. This entry comes from
+      // otherCompletions (promoteToUpcoming logs {label, checked} only), not
+      // from the promoted task object itself, so it has no createdAt.
       await waitFor(() =>
         expect(result.current.history.getDay(todayString())).toEqual([
           { label: 'carry', checked: true },
@@ -319,7 +345,9 @@ describe('TaskStore', () => {
         result.current.today.promoteTask(0);
       });
 
-      expect(result.current.upcoming.tasks).toEqual([{ label: 'defer', checked: false }]);
+      expect(result.current.upcoming.tasks).toEqual([
+        { label: 'defer', checked: false, createdAt: todayString() },
+      ]);
       await waitFor(() =>
         expect(result.current.history.datesWithHistory).not.toContain(todayString())
       );

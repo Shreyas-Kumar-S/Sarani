@@ -58,7 +58,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     (async () => {
-      const [loadedTasks, loadedHistory] = await Promise.all([loadTasks(), loadHistory()]);
+      const [loadedTasks, loadedHistory] = await Promise.all([loadTasks(today), loadHistory()]);
       const { tasksByTab: rolled } = applyDailyRollover(
         loadedTasks?.tasksByTab ?? EMPTY_TASKS,
         loadedTasks?.lastOpenedDate,
@@ -109,9 +109,15 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasksByTab.today, otherCompletions, today, hydrated]);
 
-  const addTask = useCallback((tab: TabKey, label: string) => {
-    setTasksByTab((prev) => ({ ...prev, [tab]: [...prev[tab], { label, checked: false }] }));
-  }, []);
+  const addTask = useCallback(
+    (tab: TabKey, label: string) => {
+      setTasksByTab((prev) => ({
+        ...prev,
+        [tab]: [...prev[tab], { label, checked: false, createdAt: today }],
+      }));
+    },
+    [today]
+  );
 
   // Upcoming/Someday tasks aren't tied to a day the way Today is, so a
   // completion there is logged into today's history entry directly —
