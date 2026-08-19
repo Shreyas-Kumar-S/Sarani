@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import TaskRow from '../TaskRow';
+import { strings } from '@/constants/strings';
 
 describe('TaskRow split-tap', () => {
   it('tapping the checkbox toggles without entering edit', () => {
@@ -33,5 +34,17 @@ describe('TaskRow split-tap', () => {
     const api = render(<TaskRow label="done thing" checked onToggle={jest.fn()} />);
 
     expect(api.getByRole('checkbox')).toBeChecked();
+  });
+
+  it('shows the decayed tag when a task has sat open too long', () => {
+    const api = render(<TaskRow label="old plan" decayed onToggle={jest.fn()} />);
+
+    expect(api.getByText(strings.tasks.decayedTag)).toBeTruthy();
+  });
+
+  it('does not show the decayed tag on a normal task', () => {
+    const api = render(<TaskRow label="fresh plan" onToggle={jest.fn()} />);
+
+    expect(api.queryByText(strings.tasks.decayedTag)).toBeNull();
   });
 });

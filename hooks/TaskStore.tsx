@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { isDecayed } from '@/lib/taskDecay';
 import { TaskItem } from '@/types/task';
 import { HistoryByDate, loadHistory, saveHistory } from './historyStorage';
 import { applyDailyRollover } from './rollover';
@@ -16,6 +17,7 @@ export type TabKey = 'today' | 'upcoming' | 'someday';
 
 type TaskStore = {
   tasksByTab: Record<TabKey, TaskItem[]>;
+  today: string;
   todaySnapshots: HistoryByDate;
   otherCompletions: HistoryByDate;
   addTask: (tab: TabKey, label: string) => void;
@@ -207,6 +209,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       tasksByTab,
+      today,
       todaySnapshots,
       otherCompletions,
       addTask,
@@ -217,6 +220,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     }),
     [
       tasksByTab,
+      today,
       todaySnapshots,
       otherCompletions,
       addTask,
@@ -252,7 +256,7 @@ function useTaskStore() {
 // displayed position back to its stored one, and every callback below goes
 // through it.
 export function useTaskList(tab: TabKey) {
-  const { tasksByTab, addTask, toggleTask, removeTask, editTask, promoteToUpcoming } =
+  const { tasksByTab, today, addTask, toggleTask, removeTask, editTask, promoteToUpcoming } =
     useTaskStore();
   const stored = tasksByTab[tab];
 
@@ -260,8 +264,16 @@ export function useTaskList(tab: TabKey) {
     // Array.prototype.sort is stable, so each group keeps its insertion order.
     const indices = stored.map((_, index) => index);
     indices.sort((a, b) => Number(stored[a].checked) - Number(stored[b].checked));
-    return { tasks: indices.map((index) => stored[index]), order: indices };
-  }, [stored]);
+    const ordered = indices.map((index) => stored[index]);
+
+    // Decay is a Tomorrow-only concept — see the comment on TaskItem.decayed.
+    const displayed =
+      tab === 'upcoming'
+        ? ordered.map((task) => ({ ...task, decayed: isDecayed(task, today) }))
+        : ordered;
+
+    return { tasks: displayed, order: indices };
+  }, [stored, tab, today]);
 
   const storedIndex = (displayIndex: number) => order[displayIndex] ?? displayIndex;
 

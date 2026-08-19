@@ -8,6 +8,9 @@ export type TaskItem = {
   // A Today task that survived a day change → wears the "Undone" tag until the
   // user promotes it to Upcoming. Only ever set on Today tasks.
   carriedOver?: boolean;
+  // Tomorrow-only, computed live in useTaskList from createdAt — never
+  // persisted, same convention as the display-order sink in that hook.
+  decayed?: boolean;
 };
 
 export type TaskSection = {

@@ -86,6 +86,8 @@ export const strings = {
     addCta: '+ Add task',
     newTaskPlaceholder: 'New task',
     carriedOverTag: 'Undone',
+    // First-pass copy — wording deliberately deferred; change freely.
+    decayedTag: 'Been a while',
   },
 
   actions: {

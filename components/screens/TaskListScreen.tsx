@@ -265,6 +265,7 @@ export default function TaskListScreen({
                         time={item.time}
                         checked={item.checked}
                         carriedOver={item.carriedOver}
+                        decayed={item.decayed}
                         onToggle={
                           onToggleTask ? () => onToggleTask(sectionIndex, index) : undefined
                         }

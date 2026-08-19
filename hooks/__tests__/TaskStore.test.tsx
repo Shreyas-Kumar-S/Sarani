@@ -117,7 +117,9 @@ describe('TaskStore', () => {
 
     expect(result.current.today.tasks).toHaveLength(0);
     expect(result.current.upcoming.tasks).toEqual([
-      { label: 'carry', checked: false, createdAt: todayString() },
+      // decayed is computed live for the Upcoming tab; a task promoted just
+      // now carries today's createdAt, so it isn't decayed yet.
+      { label: 'carry', checked: false, createdAt: todayString(), decayed: false },
     ]);
   });
 
@@ -226,6 +228,65 @@ describe('TaskStore', () => {
     });
   });
 
+  describe('decay tag on stale Upcoming tasks', () => {
+    it('flags an unchecked Upcoming task as decayed once it is older than the threshold', async () => {
+      await AsyncStorage.setItem(
+        'sarani.tasks.v1',
+        JSON.stringify({
+          tasksByTab: {
+            today: [],
+            upcoming: [{ label: 'old plan', checked: false, createdAt: '2026-06-01' }],
+            someday: [],
+          },
+          lastOpenedDate: todayString(),
+        })
+      );
+
+      const { result } = renderHook(useBoth, { wrapper });
+      await waitFor(() => expect(result.current.upcoming.tasks).toHaveLength(1));
+
+      expect(result.current.upcoming.tasks[0].decayed).toBe(true);
+    });
+
+    it('does not flag a recently-added Upcoming task', async () => {
+      await AsyncStorage.setItem(
+        'sarani.tasks.v1',
+        JSON.stringify({
+          tasksByTab: {
+            today: [],
+            upcoming: [{ label: 'fresh plan', checked: false, createdAt: todayString() }],
+            someday: [],
+          },
+          lastOpenedDate: todayString(),
+        })
+      );
+
+      const { result } = renderHook(useBoth, { wrapper });
+      await waitFor(() => expect(result.current.upcoming.tasks).toHaveLength(1));
+
+      expect(result.current.upcoming.tasks[0].decayed).toBe(false);
+    });
+
+    it('never flags a Someday task, regardless of age', async () => {
+      await AsyncStorage.setItem(
+        'sarani.tasks.v1',
+        JSON.stringify({
+          tasksByTab: {
+            today: [],
+            upcoming: [],
+            someday: [{ label: 'old someday', checked: false, createdAt: '2026-01-01' }],
+          },
+          lastOpenedDate: todayString(),
+        })
+      );
+
+      const { result } = renderHook(useWithHistory, { wrapper });
+      await waitFor(() => expect(result.current.someday.tasks).toHaveLength(1));
+
+      expect(result.current.someday.tasks[0].decayed).toBeUndefined();
+    });
+  });
+
   describe('history', () => {
     it("mirrors Today's live list into today's history entry", async () => {
       await seed({
@@ -315,7 +376,9 @@ describe('TaskStore', () => {
 
       expect(result.current.today.tasks).toHaveLength(0);
       expect(result.current.upcoming.tasks).toEqual([
-        { label: 'carry', checked: true, createdAt: todayString() },
+        // decayed is computed live for the Upcoming tab; checked tasks never
+        // decay, regardless of age.
+        { label: 'carry', checked: true, createdAt: todayString(), decayed: false },
       ]);
       // The task is gone from Today's live list, but promoting it must not
       // erase today's record of having finished it. This entry comes from
@@ -346,7 +409,9 @@ describe('TaskStore', () => {
       });
 
       expect(result.current.upcoming.tasks).toEqual([
-        { label: 'defer', checked: false, createdAt: todayString() },
+        // decayed is computed live for the Upcoming tab; a task promoted just
+        // now carries today's createdAt, so it isn't decayed yet.
+        { label: 'defer', checked: false, createdAt: todayString(), decayed: false },
       ]);
       await waitFor(() =>
         expect(result.current.history.datesWithHistory).not.toContain(todayString())

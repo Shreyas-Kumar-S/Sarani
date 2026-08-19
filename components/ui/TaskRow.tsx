@@ -12,6 +12,7 @@ type TaskRowProps = {
   time?: string;
   checked?: boolean;
   carriedOver?: boolean;
+  decayed?: boolean;
   onToggle?: () => void;
   onLabelPress?: () => void;
   onDelete?: () => void;
@@ -25,6 +26,7 @@ export default function TaskRow({
   time,
   checked,
   carriedOver,
+  decayed,
   onToggle,
   onLabelPress,
   onDelete,
@@ -85,6 +87,11 @@ export default function TaskRow({
             {strings.tasks.carriedOverTag}
           </Text>
         </Pressable>
+      ) : null}
+      {decayed ? (
+        <View className="ml-3 rounded-full bg-primary/15 px-2.5 py-1">
+          <Text className="text-[12px] font-medium text-primary">{strings.tasks.decayedTag}</Text>
+        </View>
       ) : null}
       {time ? (
         <Text className="ml-3 text-[15px] text-ink-tertiary dark:text-ink-dark-tertiary">
