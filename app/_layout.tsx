@@ -16,6 +16,7 @@ import { useColorScheme } from 'nativewind';
 import React, { useEffect, useRef, useState } from 'react';
 import { LogBox, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Easing, runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '../global.css';
@@ -84,67 +85,67 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ErrorBoundary>
-          <AppConfigProvider>
-            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-            <UpdateGate>
-              {phase === 'splash' ? (
-                <SplashScreen
-                  onFinish={() => {
-                    if (skipWelcomeRef.current) {
-                      // Repeat launch: dock the toggle instantly and go straight
-                      // to the app, skipping the one-time welcome curtain.
-                      dock.value = 1;
-                      setPhase('app');
-                    } else {
-                      setPhase('welcome');
-                    }
-                  }}
-                />
-              ) : (
-                <AppRevealProvider revealed={phase === 'app'}>
-                  <View style={{ flex: 1 }}>
-                    <Stack
-                      screenOptions={{
-                        headerShown: false,
-                        contentStyle: {
-                          backgroundColor: colorScheme === 'dark' ? '#000000' : '#FBFAF8',
-                        },
-                      }}
-                    >
-                      <Stack.Screen name="index" />
-                      <Stack.Screen name="(tabs)" />
-                      <Stack.Screen
-                        name="about"
-                        options={{
-                          presentation: 'card',
-                          animation: 'slide_from_bottom',
+      <KeyboardProvider>
+        <SafeAreaProvider>
+          <ErrorBoundary>
+            <AppConfigProvider>
+              <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+              <UpdateGate>
+                {phase === 'splash' ? (
+                  <SplashScreen
+                    onFinish={() => {
+                      if (skipWelcomeRef.current) {
+                        dock.value = 1;
+                        setPhase('app');
+                      } else {
+                        setPhase('welcome');
+                      }
+                    }}
+                  />
+                ) : (
+                  <AppRevealProvider revealed={phase === 'app'}>
+                    <View style={{ flex: 1 }}>
+                      <Stack
+                        screenOptions={{
+                          headerShown: false,
                           contentStyle: {
                             backgroundColor: colorScheme === 'dark' ? '#000000' : '#FBFAF8',
                           },
                         }}
+                      >
+                        <Stack.Screen name="index" />
+                        <Stack.Screen name="(tabs)" />
+                        <Stack.Screen
+                          name="about"
+                          options={{
+                            presentation: 'card',
+                            animation: 'slide_from_bottom',
+                            contentStyle: {
+                              backgroundColor: colorScheme === 'dark' ? '#000000' : '#FBFAF8',
+                            },
+                          }}
+                        />
+                      </Stack>
+                      {phase === 'welcome' ? (
+                        <WelcomeCurtain
+                          curtainOpacity={curtainOpacity}
+                          onSequenceComplete={finishWelcome}
+                        />
+                      ) : null}
+                      <FloatingThemeToggle
+                        dock={dock}
+                        introDelay={phase === 'welcome' ? PRIVACY_ENTER_AT : undefined}
                       />
-                    </Stack>
-                    {phase === 'welcome' ? (
-                      <WelcomeCurtain
-                        curtainOpacity={curtainOpacity}
-                        onSequenceComplete={finishWelcome}
-                      />
-                    ) : null}
-                    <FloatingThemeToggle
-                      dock={dock}
-                      introDelay={phase === 'welcome' ? PRIVACY_ENTER_AT : undefined}
-                    />
-                    {phase === 'app' ? <InfoButton /> : null}
-                  </View>
-                </AppRevealProvider>
-              )}
-            </UpdateGate>
-            {phase === 'app' ? <AnnouncementModal /> : null}
-          </AppConfigProvider>
-        </ErrorBoundary>
-      </SafeAreaProvider>
+                      {phase === 'app' ? <InfoButton /> : null}
+                    </View>
+                  </AppRevealProvider>
+                )}
+              </UpdateGate>
+              {phase === 'app' ? <AnnouncementModal /> : null}
+            </AppConfigProvider>
+          </ErrorBoundary>
+        </SafeAreaProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

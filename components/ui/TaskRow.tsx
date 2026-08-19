@@ -19,8 +19,6 @@ type TaskRowProps = {
   onTagPress?: () => void;
 };
 
-// Row gesture language (app-wide): tap the checkbox to complete, tap the text
-// to edit, swipe left to let go.
 export default function TaskRow({
   label,
   time,
@@ -39,12 +37,6 @@ export default function TaskRow({
     action();
   };
 
-  // Row rhythm is deliberately tighter than it looks like it should be. At
-  // 21px/28px leading with 13px padding a row was ~54px, so barely 9 fit on a
-  // phone before scrolling — reported as "you can't have a list of 10". Most of
-  // that was leading and padding rather than glyph size, so this trims those
-  // hardest and only drops the text to 17px, which is iOS's own body size and
-  // still comfortably legible.
   const row = (
     <View className="flex-row items-center py-[10px]">
       <Pressable
@@ -68,7 +60,7 @@ export default function TaskRow({
         onPress={onLabelPress}
       >
         <Text
-          className={`text-[17px] leading-6 text-ink-secondary dark:text-ink-dark-secondary ${
+          className={`text-[17px] font-medium leading-6 text-ink-secondary dark:text-ink-dark-secondary ${
             checked ? 'line-through opacity-55' : ''
           }`}
         >

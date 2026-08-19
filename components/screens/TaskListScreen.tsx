@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useColorScheme } from 'nativewind';
-import { Keyboard, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import BaseScreen from './BaseScreen';
 import GlassCard from '@/components/ui/GlassCard';
@@ -11,7 +12,6 @@ import SectionTitle from '@/components/ui/SectionTitle';
 import TaskRow from '@/components/ui/TaskRow';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { strings } from '@/constants/strings';
-import { scrollTargetForRow } from '@/lib/scrollToRow';
 import { TaskSection } from '@/types/task';
 
 type TaskListScreenProps = {
@@ -45,10 +45,6 @@ export default function TaskListScreen({
   const [editDraft, setEditDraft] = useState('');
   const inputRef = useRef<TextInput>(null);
   const editInputRef = useRef<TextInput>(null);
-  const scrollRef = useRef<ScrollView>(null);
-  const editingRowRef = useRef<View>(null);
-  // Set on the commit button's pressIn (which fires before the input's blur)
-  // so the blur handler knows to keep the input open for rapid entry.
   const keepInputOpenRef = useRef(false);
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -60,9 +56,6 @@ export default function TaskListScreen({
       return;
     }
 
-    // The input mounts with autoFocus, which raises the keyboard reliably. The
-    // previous requestAnimationFrame(focus) raced the mount and frequently
-    // lost, leaving the row open with no keyboard.
     setIsAddingTask(true);
   };
 
@@ -89,52 +82,6 @@ export default function TaskListScreen({
     }
   };
 
-  // Bring a freshly-opened input above the keyboard. automaticallyAdjustKeyboard-
-  // Insets reserves the space, but on a long list the add row is already below
-  // the fold, so it still needs scrolling to.
-  useEffect(() => {
-    if (!isAddingTask) {
-      return;
-    }
-
-    const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
-    return () => clearTimeout(timer);
-  }, [isAddingTask]);
-
-  // Brings the row being edited above the keyboard. automaticallyAdjustKeyboard-
-  // Insets (on the ScrollView below) reserves the space but never scrolls
-  // off-screen content into it — same problem the add row above already
-  // solved with scrollToEnd(), except an edited row can be anywhere in the
-  // list, not always at the bottom, so this measures its actual position.
-  useEffect(() => {
-    if (!editing) {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      const scrollNode = scrollRef.current;
-      const rowNode = editingRowRef.current;
-      if (!scrollNode || !rowNode) {
-        return;
-      }
-
-      // measureLayout wants a host-component ref to measure against. If
-      // `scrollNode` (the ScrollView instance) isn't accepted directly by the
-      // installed RN/TS version, swap in `scrollNode.getScrollResponder()` or
-      // measure against a plain `View` wrapped around the ScrollView's
-      // children instead — confirm whichever is needed on-device, since this
-      // API has shifted across RN versions and jest's mocked native layer
-      // can't catch a mismatch here (see Step 7).
-      rowNode.measureLayout(
-        scrollNode as unknown as React.ComponentRef<typeof View>,
-        (_x, y) => scrollNode.scrollTo({ y: scrollTargetForRow(y), animated: true }),
-        () => {}
-      );
-    }, 50);
-
-    return () => clearTimeout(timer);
-  }, [editing]);
-
   const startEditingTask = (sectionIndex: number, itemIndex: number, label: string) => {
     if (!onEditTask) {
       return;
@@ -144,8 +91,6 @@ export default function TaskListScreen({
     setEditDraft(label);
   };
 
-  // Saves the trimmed draft if there is one; an emptied draft cancels the edit
-  // rather than deleting the task (deletion has its own deliberate gesture).
   const commitEdit = () => {
     if (!editing) {
       return;
@@ -161,9 +106,6 @@ export default function TaskListScreen({
     setEditDraft('');
   };
 
-  // Both handlers close over current drafts, so they're mirrored into refs and
-  // the listener below subscribes exactly once. Previously this effect had no
-  // dependency array at all and tore down/re-subscribed on every render.
   const handleInputBlurRef = useRef(handleInputBlur);
   const commitEditRef = useRef(commitEdit);
   useEffect(() => {
@@ -171,13 +113,6 @@ export default function TaskListScreen({
     commitEditRef.current = commitEdit;
   });
 
-  // Some keyboard-dismiss gestures (iOS swipe-down, Android back) hide the
-  // keyboard without ever blurring the TextInput, so a row otherwise stays
-  // stuck open with a "focused" input the user can't close. isFocused() still
-  // reporting true here is exactly that case (a real blur, e.g. from the
-  // commit button, has already cleared it by the time this fires), so force
-  // the same close path that onBlur would have taken. This covers the edit row
-  // too, which previously had no such safety net and could be left stranded.
   useEffect(() => {
     const hideSub = Keyboard.addListener('keyboardDidHide', () => {
       if (inputRef.current?.isFocused()) {
@@ -197,17 +132,12 @@ export default function TaskListScreen({
   return (
     <BaseScreen className="pt-2">
       <Header title={greeting} />
-      <ScrollView
-        ref={scrollRef}
-        contentContainerClassName="pt-5"
+      <KeyboardAwareScrollView
+        contentContainerStyle={{ paddingTop: 20 }}
         showsVerticalScrollIndicator={false}
-        // Without these the keyboard simply covers the add row once the list is
-        // long enough (iOS never moved anything), and taps aimed at the commit
-        // button are swallowed by the scroll view's keyboard-dismiss responder,
-        // which defaults to "never".
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
-        automaticallyAdjustKeyboardInsets
+        bottomOffset={24}
       >
         <GlassCard className="px-5 py-6">
           {sections.map((section, sectionIndex) => (
@@ -219,20 +149,13 @@ export default function TaskListScreen({
               <View className="rounded-[22px] px-4 py-2">
                 {section.items.map((item, index) => (
                   <Animated.View
-                    // Deliberately not index-keyed: completed tasks sink, so an
-                    // index-based key would change for every row below the one
-                    // just checked, remounting them all and replaying their
-                    // entrance animation. Keyed on the label, React moves the
-                    // existing row instead. (Two identical labels in one tab
-                    // would collide, but the effect is cosmetic — mutations are
-                    // index-based, not key-based.)
                     key={`${section.title}-${item.label}`}
                     entering={FadeInDown.duration(220)}
                     exiting={FadeOut.duration(300)}
                     className="border-b border-ink-quaternary/15 dark:border-ink-dark-quaternary/15 last:border-b-0"
                   >
                     {editing?.section === sectionIndex && editing?.item === index ? (
-                      <View ref={editingRowRef} className="flex-row items-center py-[10px]">
+                      <View className="flex-row items-center py-[10px]">
                         <TextInput
                           accessibilityLabel={strings.a11y.editTaskInput}
                           ref={editInputRef}
@@ -293,11 +216,6 @@ export default function TaskListScreen({
                       value={draftTask}
                       onChangeText={setDraftTask}
                       onBlur={handleInputBlur}
-                      // No onSubmitEditing/submitBehavior: letting Done fall
-                      // through to the default blur makes blur the single
-                      // commit path, so "Done" genuinely finishes and closes
-                      // the row. Rapid entry is still available through the
-                      // arrow button, which keeps the row open deliberately.
                       autoFocus
                       returnKeyType="done"
                       placeholder={strings.tasks.newTaskPlaceholder}
@@ -339,7 +257,7 @@ export default function TaskListScreen({
             </Text>
           </View>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </BaseScreen>
   );
 }

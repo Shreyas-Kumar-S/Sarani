@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-// oxlint-disable-next-line react-doctor/rn-no-non-native-navigator -- deliberate: the floating blurred tab bar and its rising entrance animation are built on the JS navigator; native-tabs cannot render this custom design.
+// oxlint-disable-next-line react-doctor/rn-no-non-native-navigator
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
 import { strings } from '@/constants/strings';
 import { useAppRevealed } from '@/hooks/AppReveal';
@@ -28,29 +28,16 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
-// How far below its resting spot the bar starts (its height + bottom offset,
-// i.e. fully off-screen) and how it rises once the startup reveal completes.
 const BAR_RISE_DISTANCE = 130;
 const BAR_RISE_DELAY_MS = 200;
 const BAR_RISE_DURATION_MS = 700;
 
-// Geometry of the floating tab bar — also read by StayTunedToast so its pill
-// lands just above the bar regardless of screen width.
 const TAB_BAR_BOTTOM = 38;
 const TAB_BAR_HEIGHT = 72;
 const TAB_BAR_RADIUS = 38;
 
-// The bar's five equally-spaced columns, in display order. 'flame' isn't a
-// real route (it doesn't appear in state.routes) — it's spliced in as its
-// own flex-1 slot alongside the four real tabs so all five share the row
-// equally instead of the flame floating over whichever tab happens to be at
-// screen-center.
 const TAB_BAR_SLOTS = ['today', 'upcoming', 'flame', 'someday', 'history'] as const;
 
-// Reflects a tab's task state: empty square until every task in the tab is
-// checked off, then a ticked square.
-// `color` is ColorValue, not string: RN 0.85 widened the tabBarIcon callback's
-// type to admit platform colors (OpaqueColorValue), which Feather accepts too.
 function TaskTabIcon({ tab, color, size }: { tab: TabKey; color: ColorValue; size: number }) {
   const allComplete = useTabAllComplete(tab);
   return <Feather name={allComplete ? 'check-square' : 'square'} size={size} color={color} />;
@@ -59,23 +46,13 @@ function TaskTabIcon({ tab, color, size }: { tab: TabKey; color: ColorValue; siz
 const FLAME_ICON_LIGHT = require('@/assets/images/flame_light.png');
 const FLAME_ICON_DARK = require('@/assets/images/flame_black.png');
 
-// Halo behind the flame icon, punched in on press then eased back out — a
-// radial-gradient Svg circle (same technique as AnimatedBackground's orbs)
-// rather than a shadow, since colored View shadows don't render reliably on
-// Android.
 const GLOW_SIZE = 64;
 const ICON_SIZE = 24;
 const GLOW_OFFSET = -(GLOW_SIZE - ICON_SIZE) / 2;
 
-// A teaser for a not-yet-built feature, sitting in its own column between
-// Upcoming and Someday. Not a real route — tapping it just surfaces a "stay
-// tuned" pill rather than navigating anywhere.
 function FlameTeaserButton({ onPress, isDark }: { onPress: () => void; isDark: boolean }) {
   const glow = useSharedValue(0);
 
-  // A brighter, more saturated green reads as a genuine glow against the
-  // dark background; the same hue at a gentler strength suits a light one —
-  // the neon version would look garish rather than glowing on a pale surface.
   const glowColor = isDark ? '#9fd7bc' : '#7A9B76';
   const glowPeakOpacity = isDark ? 0.9 : 0.55;
 
@@ -131,12 +108,6 @@ function FlameTeaserButton({ onPress, isDark }: { onPress: () => void; isDark: b
   );
 }
 
-// Wraps the whole floating tab bar: rises into place once per app launch,
-// then lays out five equal-width columns (Today, Upcoming, Flame, Someday,
-// History) as one flex row, so the flame teaser shares the row evenly with
-// the real tabs instead of floating over them. Building this bar by hand
-// (rather than the default BottomTabBar) is what makes an inserted,
-// non-route column like the flame possible.
 function RisingTabBar({
   state,
   descriptors,
@@ -146,8 +117,6 @@ function RisingTabBar({
 }: BottomTabBarProps & { isDark: boolean; onFlamePress: () => void }) {
   const revealed = useAppRevealed();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
-  // Starts settled when mounted after the reveal (e.g. fast refresh) so the
-  // rise only ever plays on a real cold launch.
   const progress = useSharedValue(revealed ? 1 : 0);
 
   useEffect(() => {
@@ -189,9 +158,6 @@ function RisingTabBar({
         riseStyle,
       ]}
     >
-      {/* Background is its own clipped layer (rather than living on the
-          shadow-casting container above) so the blur's rounded corners don't
-          also clip the shadow. */}
       <View
         style={{
           flex: 1,
@@ -201,7 +167,7 @@ function RisingTabBar({
         }}
       >
         <BlurView
-          experimentalBlurMethod="dimezisBlurView"
+          blurMethod="dimezisBlurView"
           intensity={isDark ? 28 : 42}
           tint={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
@@ -266,11 +232,6 @@ function StayTunedToast({ visible }: { visible: boolean }) {
   }
 
   return (
-    // Full-width wrapper + alignItems:'center', not a fixed-width box centred
-    // via left:50%+translateX — a hardcoded width squeezed the pill's inner
-    // text below its natural size, wrapping "Stay tuned" onto two lines. This
-    // way the pill always sizes to its own content, so it stays one line on
-    // any phone width.
     <View
       pointerEvents="none"
       style={{
@@ -335,8 +296,6 @@ export default function TabsLayout() {
   return (
     <TaskProvider>
       <View style={{ flex: 1 }}>
-        {/* Persistent atmospheric layer — rendered once, behind the navigator, so
-            it stays continuous across tab switches instead of remounting per screen. */}
         <View style={StyleSheet.absoluteFill} className="bg-surface-page dark:bg-surface-dark-page">
           <AnimatedBackground />
         </View>
@@ -352,7 +311,7 @@ export default function TabsLayout() {
             tabBarStyle: baseTabBarStyle,
             tabBarBackground: () => (
               <BlurView
-                experimentalBlurMethod="dimezisBlurView"
+                blurMethod="dimezisBlurView"
                 intensity={isDark ? 28 : 42}
                 tint={isDark ? 'dark' : 'light'}
                 style={[StyleSheet.absoluteFill, { borderRadius: 38, overflow: 'hidden' }]}
