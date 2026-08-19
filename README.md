@@ -99,3 +99,8 @@ Non-obvious decisions behind the code, kept here instead of as inline comments s
 - `react-native-reanimated` is mocked with a local stand-in (`jest/reanimatedMock.cjs`) that mirrors Reanimated's own mock semantics, because Reanimated 4's own mock entry can no longer be loaded under Jest.
 - `expo-font` is mocked as already-loaded so `@expo/vector-icons` doesn't call `setState` asynchronously after render — that was producing `act()` warnings in tests.
 - `@react-native-async-storage/async-storage` and `react-native-keyboard-controller` are each mocked with that library's own official Jest mock.
+
+Promotional Video:
+https://drive.google.com/file/d/1LWuj-zIE6o7-zld5EElP1Nm2RsuJ2hyZ/view?usp=sharing
+
+Apk: https://drive.google.com/file/d/1LlhKRT_vjEacqntrge-f7h2ezij1umko/view?usp=sharing
