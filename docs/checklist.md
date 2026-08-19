@@ -34,7 +34,7 @@ just `insets.top`.
 
 **Size:** small–medium. Contained to one screen.
 
-## 3. Tomorrow (and Someday) — decay tag on stale open tasks
+## 3. Tomorrow — decay tag on stale open tasks
 
 **New requirement:** `TaskItem` has no timestamp today (`types/task.ts`). Add
 `createdAt`, set on `addTask`. Existing tasks already in storage won't have
