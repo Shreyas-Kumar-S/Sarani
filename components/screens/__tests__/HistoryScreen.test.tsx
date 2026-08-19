@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Text } from 'react-native';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import HistoryScreen from '../HistoryScreen';
 import { strings } from '@/constants/strings';
@@ -133,5 +133,19 @@ describe('HistoryScreen', () => {
     expect(getByText('May 2026')).toBeTruthy();
     expect(getByText('may task')).toBeTruthy();
     expect(queryByText('june task')).toBeNull();
+  });
+
+  it('keeps the title and month selector outside the scrolling day list', () => {
+    mockDatesWithHistory = ['2026-06-01'];
+    mockGetDay.mockReturnValue([{ label: 'a done thing', checked: true }]);
+
+    const { getByTestId } = renderScreen();
+    const scrollArea = getByTestId('history-day-scroll');
+
+    // Day content lives inside the scrolling area...
+    expect(within(scrollArea).getByText('a done thing')).toBeTruthy();
+    // ...but the title and month selector do not, so they stay fixed while it scrolls.
+    expect(within(scrollArea).queryByText('June 2026')).toBeNull();
+    expect(within(scrollArea).queryByLabelText('select-JUN-2026')).toBeNull();
   });
 });
