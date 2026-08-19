@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { isDecayed } from '@/lib/taskDecay';
@@ -52,6 +53,40 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   // and which date new history entries are recorded under.
   // Lazy state initializer so todayString() runs once, not on every render.
   const [today] = useState(todayString);
+
+  // Delay before a just-completed Upcoming/Someday task disappears from the
+  // live tab into History — long enough that the checkmark itself is seen
+  // before the row goes away, short enough that it still reads as one
+  // motion ("this moved to History") rather than two.
+  const COMPLETED_REMOVAL_DELAY_MS = 700;
+  // Pending removal timers, tracked so a still-mounted TaskProvider never
+  // calls setState after it's gone (test cleanup unmounts synchronously;
+  // this timer doesn't). Cleared on unmount below.
+  const pendingRemovals = useRef(new Set<ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    return () => {
+      pendingRemovals.current.forEach(clearTimeout);
+      pendingRemovals.current.clear();
+    };
+  }, []);
+
+  // Removes `completedTask` from `tab` by object identity, not index — an
+  // index captured now could point at a different task by the time this
+  // fires, if anything else in the tab changes during the delay. Toggling
+  // the task back to unchecked before the timer fires is naturally a no-op:
+  // un-checking creates a new object (a fresh `{...t, checked: false}`), so
+  // the originally-captured checked reference simply no longer matches
+  // anything in the array by the time this runs.
+  const scheduleCompletedRemoval = useCallback((tab: TabKey, completedTask: TaskItem) => {
+    const timer = setTimeout(() => {
+      pendingRemovals.current.delete(timer);
+      setTasksByTab((prev) => ({
+        ...prev,
+        [tab]: prev[tab].filter((t) => t !== completedTask),
+      }));
+    }, COMPLETED_REMOVAL_DELAY_MS);
+    pendingRemovals.current.add(timer);
+  }, []);
 
   // Load once on mount: read saved state, apply the daily rollover, adopt it,
   // then record the rolled result + today's date so the rollover isn't redone
@@ -134,10 +169,11 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       }
 
       const nextChecked = !task.checked;
+      const nextTask = { ...task, checked: nextChecked };
 
       setTasksByTab((prev) => ({
         ...prev,
-        [tab]: prev[tab].map((t, i) => (i === itemIndex ? { ...t, checked: nextChecked } : t)),
+        [tab]: prev[tab].map((t, i) => (i === itemIndex ? nextTask : t)),
       }));
 
       if (tab !== 'today') {
@@ -156,9 +192,13 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             ? prevOther
             : { ...prevOther, [today]: withoutExisting };
         });
+
+        if (nextChecked) {
+          scheduleCompletedRemoval(tab, nextTask);
+        }
       }
     },
-    [tasksByTab, today]
+    [tasksByTab, today, scheduleCompletedRemoval]
   );
 
   const removeTask = useCallback((tab: TabKey, itemIndex: number) => {
@@ -201,9 +241,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             [today]: [...withoutExisting, { label: task.label, checked: true }],
           };
         });
+        scheduleCompletedRemoval('upcoming', promoted);
       }
     },
-    [tasksByTab, today]
+    [tasksByTab, today, scheduleCompletedRemoval]
   );
 
   const value = useMemo(

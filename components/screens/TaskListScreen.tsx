@@ -3,7 +3,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useColorScheme } from 'nativewind';
 import { Keyboard, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import BaseScreen from './BaseScreen';
 import GlassCard from '@/components/ui/GlassCard';
 import Header from '@/components/ui/Header';
@@ -228,6 +228,7 @@ export default function TaskListScreen({
                     // index-based, not key-based.)
                     key={`${section.title}-${item.label}`}
                     entering={FadeInDown.duration(220)}
+                    exiting={FadeOut.duration(300)}
                     className="border-b border-ink-quaternary/15 dark:border-ink-dark-quaternary/15 last:border-b-0"
                   >
                     {editing?.section === sectionIndex && editing?.item === index ? (

@@ -287,6 +287,117 @@ describe('TaskStore', () => {
     });
   });
 
+  describe('completed Upcoming/Someday tasks leave the tab into History', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('removes a checked Upcoming task from the live tab after a short delay', async () => {
+      await seed({
+        tasksByTab: {
+          today: [],
+          upcoming: [{ label: 'read a book', checked: false }],
+          someday: [],
+        },
+        lastOpenedDate: todayString(),
+      });
+
+      const { result } = renderHook(useBoth, { wrapper });
+      await waitFor(() => expect(result.current.upcoming.tasks).toHaveLength(1));
+
+      act(() => {
+        result.current.upcoming.toggleTask(0, 0);
+      });
+      // Still present immediately — the delay is what lets the checkmark be seen.
+      expect(result.current.upcoming.tasks).toHaveLength(1);
+
+      act(() => {
+        jest.advanceTimersByTime(700);
+      });
+
+      expect(result.current.upcoming.tasks).toHaveLength(0);
+    });
+
+    it('applies the same delayed removal to Someday', async () => {
+      await seed({
+        tasksByTab: {
+          today: [],
+          upcoming: [],
+          someday: [{ label: 'learn pottery', checked: false }],
+        },
+        lastOpenedDate: todayString(),
+      });
+
+      const { result } = renderHook(useWithHistory, { wrapper });
+      await waitFor(() => expect(result.current.someday.tasks).toHaveLength(1));
+
+      act(() => {
+        result.current.someday.toggleTask(0, 0);
+      });
+      act(() => {
+        jest.advanceTimersByTime(700);
+      });
+
+      expect(result.current.someday.tasks).toHaveLength(0);
+    });
+
+    it('does not remove the task if unchecked again before the delay elapses', async () => {
+      await seed({
+        tasksByTab: {
+          today: [],
+          upcoming: [{ label: 'read a book', checked: false }],
+          someday: [],
+        },
+        lastOpenedDate: todayString(),
+      });
+
+      const { result } = renderHook(useBoth, { wrapper });
+      await waitFor(() => expect(result.current.upcoming.tasks).toHaveLength(1));
+
+      act(() => {
+        result.current.upcoming.toggleTask(0, 0);
+      });
+      act(() => {
+        result.current.upcoming.toggleTask(0, 0);
+      });
+      act(() => {
+        jest.advanceTimersByTime(700);
+      });
+
+      expect(result.current.upcoming.tasks).toHaveLength(1);
+      expect(result.current.upcoming.tasks[0].checked).toBe(false);
+    });
+
+    it('schedules removal when promoting an already-completed carried-over task into Upcoming', async () => {
+      await seed({
+        tasksByTab: {
+          today: [{ label: 'carry', checked: true, carriedOver: true }],
+          upcoming: [],
+          someday: [],
+        },
+        lastOpenedDate: todayString(),
+      });
+
+      const { result } = renderHook(useBoth, { wrapper });
+      await waitFor(() => expect(result.current.today.tasks).toHaveLength(1));
+
+      act(() => {
+        result.current.today.promoteTask(0);
+      });
+      expect(result.current.upcoming.tasks).toHaveLength(1);
+
+      act(() => {
+        jest.advanceTimersByTime(700);
+      });
+
+      expect(result.current.upcoming.tasks).toHaveLength(0);
+    });
+  });
+
   describe('history', () => {
     it("mirrors Today's live list into today's history entry", async () => {
       await seed({
