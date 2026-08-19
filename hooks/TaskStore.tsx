@@ -11,7 +11,7 @@ import React, {
 import { isDecayed } from '@/lib/taskDecay';
 import { TaskItem } from '@/types/task';
 import { HistoryByDate, loadHistory, saveHistory } from './historyStorage';
-import { applyDailyRollover } from './rollover';
+import { applyDailyRollover, sweepCompletedFromOtherTabs } from './rollover';
 import { loadTasks, saveTasks, todayString } from './taskStorage';
 
 export type TabKey = 'today' | 'upcoming' | 'someday';
@@ -101,16 +101,21 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         loadedTasks?.lastOpenedDate,
         today
       );
+      // Drops any Upcoming/Someday task left checked from before this
+      // feature shipped (or from a session killed mid-delay) — see
+      // sweepCompletedFromOtherTabs' comment in ./rollover for why this
+      // can't just be handled by the in-session removal timer alone.
+      const swept = sweepCompletedFromOtherTabs(rolled);
 
       if (cancelled) {
         return;
       }
 
-      setTasksByTab(rolled);
+      setTasksByTab(swept);
       setTodaySnapshots(loadedHistory?.todaySnapshots ?? {});
       setOtherCompletions(loadedHistory?.otherCompletions ?? {});
       setHydrated(true);
-      saveTasks({ tasksByTab: rolled, lastOpenedDate: today });
+      saveTasks({ tasksByTab: swept, lastOpenedDate: today });
     })();
 
     return () => {

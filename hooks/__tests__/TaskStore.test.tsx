@@ -398,6 +398,52 @@ describe('TaskStore', () => {
     });
   });
 
+  describe('sweeps already-checked Upcoming/Someday tasks at load time', () => {
+    // The regression that matters: in-session removal only fires from the
+    // toggle/promote path (see the delayed-removal describe block above), so
+    // a task that was already checked before that feature shipped — or
+    // checked in a session killed inside the 700ms delay — would otherwise
+    // stay checked in the live tab forever. This is the load-time sweep that
+    // catches those.
+    it('drops an already-checked Upcoming task on load', async () => {
+      await seed({
+        tasksByTab: {
+          today: [],
+          upcoming: [
+            { label: 'stale checked', checked: true },
+            { label: 'still pending', checked: false },
+          ],
+          someday: [],
+        },
+        lastOpenedDate: todayString(),
+      });
+
+      const { result } = renderHook(useBoth, { wrapper });
+
+      await waitFor(() => expect(result.current.upcoming.tasks).toHaveLength(1));
+      expect(result.current.upcoming.tasks[0].label).toBe('still pending');
+    });
+
+    it('drops an already-checked Someday task on load', async () => {
+      await seed({
+        tasksByTab: {
+          today: [],
+          upcoming: [],
+          someday: [
+            { label: 'stale checked', checked: true },
+            { label: 'still pending', checked: false },
+          ],
+        },
+        lastOpenedDate: todayString(),
+      });
+
+      const { result } = renderHook(useWithHistory, { wrapper });
+
+      await waitFor(() => expect(result.current.someday.tasks).toHaveLength(1));
+      expect(result.current.someday.tasks[0].label).toBe('still pending');
+    });
+  });
+
   describe('history', () => {
     it("mirrors Today's live list into today's history entry", async () => {
       await seed({
