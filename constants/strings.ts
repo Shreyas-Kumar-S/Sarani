@@ -78,10 +78,6 @@ export const strings = {
     },
     },
 
-  nav: {
-    flameToast: 'Stay tuned',
-  },
-
   tasks: {
     addCta: '+ Add task',
     newTaskPlaceholder: 'New task',
@@ -100,11 +96,12 @@ export const strings = {
     commitEdit: 'Save changes',
     openAbout: 'About Sarani',
     closeAbout: 'Close',
-    flameTeaser: 'Coming soon',
     editTaskPrefix: 'Edit',
     editTaskInput: 'Edit task text',
     newTaskInput: 'New task text',
     moveToUpcoming: 'Move to Upcoming',
+    addTask: 'Add task',
+    addTaskHint: 'Press and hold to capture a task',
   },
 
   errorBoundary: {

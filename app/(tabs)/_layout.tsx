@@ -6,21 +6,30 @@ import { useAppRevealed } from '@/hooks/AppReveal';
 import { TabKey, TaskProvider, useTabAllComplete } from '@/hooks/TaskStore';
 import { BottomTabBarProps } from 'expo-router/js-tabs';
 import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ColorValue,
   Image,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
 import Animated, {
   Easing,
+  FadeIn,
+  FadeOut,
+  SharedValue,
+  useAnimatedKeyboard,
+  useAnimatedProps,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withDelay,
   withSequence,
@@ -38,6 +47,22 @@ const TAB_BAR_RADIUS = 38;
 
 const TAB_BAR_SLOTS = ['today', 'upcoming', 'flame', 'someday', 'history'] as const;
 
+const HOLD_MS = 650;
+const RING_REWIND_MS = 200;
+const RING_OPACITY_OUT_MS = 220;
+const SHEET_CLOSE_MS = 420;
+const CAPTURE_GAP = 16;
+
+const RING_CANVAS = 52;
+const RING_OFFSET = -5;
+const RING_RADIUS = 24.5;
+const RING_STROKE_WIDTH = 2.5;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+type CaptureState = 'idle' | 'holding' | 'active' | 'closing';
+
 function TaskTabIcon({ tab, color, size }: { tab: TabKey; color: ColorValue; size: number }) {
   const allComplete = useTabAllComplete(tab);
   return <Feather name={allComplete ? 'check-square' : 'square'} size={size} color={color} />;
@@ -50,27 +75,42 @@ const GLOW_SIZE = 64;
 const ICON_SIZE = 24;
 const GLOW_OFFSET = -(GLOW_SIZE - ICON_SIZE) / 2;
 
-function FlameTeaserButton({ onPress, isDark }: { onPress: () => void; isDark: boolean }) {
-  const glow = useSharedValue(0);
-
+function FlameCaptureButton({
+  isDark,
+  fill,
+  fillOpacity,
+  glow,
+  onPressIn,
+  onPressOut,
+  onPress,
+}: {
+  isDark: boolean;
+  fill: SharedValue<number>;
+  fillOpacity: SharedValue<number>;
+  glow: SharedValue<number>;
+  onPressIn: () => void;
+  onPressOut: () => void;
+  onPress: () => void;
+}) {
   const glowColor = isDark ? '#9fd7bc' : '#7A9B76';
   const glowPeakOpacity = isDark ? 0.9 : 0.55;
 
-  const handlePress = () => {
-    glow.value = withSequence(
-      withTiming(1, { duration: 150, easing: Easing.out(Easing.quad) }),
-      withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) })
-    );
-    onPress();
-  };
-
   const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value }));
+  const ringOpacityStyle = useAnimatedStyle(() => ({ opacity: fillOpacity.value }));
+  const ringAnimatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: RING_CIRCUMFERENCE * (1 - fill.value),
+  }));
 
   return (
     <Pressable
-      onPress={handlePress}
+      onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      onLongPress={() => {}}
+      delayLongPress={HOLD_MS}
       accessibilityRole="button"
-      accessibilityLabel={strings.a11y.flameTeaser}
+      accessibilityLabel={strings.a11y.addTask}
+      accessibilityHint={strings.a11y.addTaskHint}
       hitSlop={12}
       style={({ pressed }) => (pressed ? { opacity: 0.6 } : null)}
       className="items-center justify-center"
@@ -99,6 +139,34 @@ function FlameTeaserButton({ onPress, isDark }: { onPress: () => void; isDark: b
           <Circle cx={GLOW_SIZE / 2} cy={GLOW_SIZE / 2} r={GLOW_SIZE / 2} fill="url(#flameGlow)" />
         </Svg>
       </Animated.View>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          {
+            position: 'absolute',
+            width: RING_CANVAS,
+            height: RING_CANVAS,
+            left: RING_OFFSET,
+            top: RING_OFFSET,
+          },
+          ringOpacityStyle,
+        ]}
+      >
+        <Svg width={RING_CANVAS} height={RING_CANVAS}>
+          <AnimatedCircle
+            cx={RING_CANVAS / 2}
+            cy={RING_CANVAS / 2}
+            r={RING_RADIUS}
+            stroke={isDark ? '#9fd7bc' : '#7A9B76'}
+            strokeWidth={RING_STROKE_WIDTH}
+            strokeLinecap="round"
+            fill="none"
+            strokeDasharray={`${RING_CIRCUMFERENCE} ${RING_CIRCUMFERENCE}`}
+            transform={`rotate(-90 ${RING_CANVAS / 2} ${RING_CANVAS / 2})`}
+            animatedProps={ringAnimatedProps}
+          />
+        </Svg>
+      </Animated.View>
       <Image
         source={isDark ? FLAME_ICON_DARK : FLAME_ICON_LIGHT}
         resizeMode="contain"
@@ -113,11 +181,25 @@ function RisingTabBar({
   descriptors,
   navigation,
   isDark,
-  onFlamePress,
-}: BottomTabBarProps & { isDark: boolean; onFlamePress: () => void }) {
+  fill,
+  fillOpacity,
+  glow,
+  onCaptureBegin,
+  onCaptureEnd,
+  onCapturePress,
+}: BottomTabBarProps & {
+  isDark: boolean;
+  fill: SharedValue<number>;
+  fillOpacity: SharedValue<number>;
+  glow: SharedValue<number>;
+  onCaptureBegin: () => void;
+  onCaptureEnd: () => void;
+  onCapturePress: () => void;
+}) {
   const revealed = useAppRevealed();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const progress = useSharedValue(revealed ? 1 : 0);
+  const keyboard = useAnimatedKeyboard();
 
   useEffect(() => {
     if (revealed) {
@@ -131,6 +213,7 @@ function RisingTabBar({
   const riseStyle = useAnimatedStyle(() => ({
     opacity: progress.value,
     transform: [{ translateY: (1 - progress.value) * BAR_RISE_DISTANCE }],
+    bottom: TAB_BAR_BOTTOM + keyboard.height.value,
   }));
 
   const activeColor = isDark ? '#9DB89A' : '#7A9B76';
@@ -144,7 +227,6 @@ function RisingTabBar({
           position: 'absolute',
           left: SCREEN_WIDTH * 0.04,
           right: SCREEN_WIDTH * 0.04,
-          bottom: TAB_BAR_BOTTOM,
           height: TAB_BAR_HEIGHT,
           borderRadius: TAB_BAR_RADIUS,
           borderWidth: 1,
@@ -180,7 +262,15 @@ function RisingTabBar({
                   key="flame"
                   style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <FlameTeaserButton onPress={onFlamePress} isDark={isDark} />
+                  <FlameCaptureButton
+                    isDark={isDark}
+                    fill={fill}
+                    fillOpacity={fillOpacity}
+                    glow={glow}
+                    onPressIn={onCaptureBegin}
+                    onPressOut={onCaptureEnd}
+                    onPress={onCapturePress}
+                  />
                 </View>
               );
             }
@@ -226,53 +316,101 @@ function RisingTabBar({
   );
 }
 
-function StayTunedToast({ visible }: { visible: boolean }) {
-  if (!visible) {
-    return null;
-  }
-
-  return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        bottom: TAB_BAR_BOTTOM + TAB_BAR_HEIGHT + 16,
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-      }}
-    >
-      <View className="rounded-full bg-[#2a2a28] px-5 py-2.5 shadow-lg">
-        <Text className="text-[13.5px] font-medium text-white" numberOfLines={1}>
-          {strings.nav.flameToast}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 export default function TabsLayout() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { width: SCREEN_WIDTH } = useWindowDimensions();
-  const [stayTunedVisible, setStayTunedVisible] = useState(false);
-  const stayTunedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [captureState, setCaptureState] = useState<CaptureState>('idle');
+  const [captureDraft, setCaptureDraft] = useState('');
+  const [screenReaderOn, setScreenReaderOn] = useState(false);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fill = useSharedValue(0);
+  const fillOpacity = useSharedValue(0);
+  const glow = useSharedValue(0);
+  const keyboard = useAnimatedKeyboard();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    return () => {
-      if (stayTunedTimer.current) {
-        clearTimeout(stayTunedTimer.current);
-      }
-    };
+    AccessibilityInfo.isScreenReaderEnabled().then(setScreenReaderOn);
+    const sub = AccessibilityInfo.addEventListener('screenReaderChanged', setScreenReaderOn);
+    return () => sub.remove();
   }, []);
 
-  const handleFlamePress = () => {
-    setStayTunedVisible(true);
-    if (stayTunedTimer.current) {
-      clearTimeout(stayTunedTimer.current);
+  const clearHoldTimer = () => {
+    if (holdTimer.current) {
+      clearTimeout(holdTimer.current);
+      holdTimer.current = null;
     }
-    stayTunedTimer.current = setTimeout(() => setStayTunedVisible(false), 1800);
   };
+
+  useEffect(() => clearHoldTimer, []);
+
+  const onCapture = (_label: string) => {};
+
+  const beginHold = () => {
+    if (captureState !== 'idle') {
+      return;
+    }
+    setCaptureState('holding');
+    if (!reduceMotion) {
+      fillOpacity.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) });
+      fill.value = withTiming(1, { duration: HOLD_MS, easing: Easing.linear });
+    }
+    holdTimer.current = setTimeout(() => {
+      holdTimer.current = null;
+      setCaptureState('active');
+      setCaptureDraft('');
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (!reduceMotion) {
+        fill.value = 1;
+        fillOpacity.value = withDelay(780, withTiming(0, { duration: RING_OPACITY_OUT_MS }));
+        glow.value = withSequence(
+          withTiming(1, { duration: 150, easing: Easing.out(Easing.quad) }),
+          withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) })
+        );
+      }
+    }, HOLD_MS);
+  };
+
+  const endHold = () => {
+    if (captureState !== 'holding') {
+      return;
+    }
+    clearHoldTimer();
+    setCaptureState('idle');
+    if (!reduceMotion) {
+      fill.value = withTiming(0, {
+        duration: RING_REWIND_MS,
+        easing: Easing.bezier(0.22, 0.61, 0.36, 1),
+      });
+      fillOpacity.value = withTiming(0, { duration: RING_OPACITY_OUT_MS });
+    }
+  };
+
+  const submitCapture = () => {
+    const label = captureDraft.trim();
+    setCaptureState('closing');
+    fillOpacity.value = 0;
+    fill.value = 0;
+    setTimeout(() => {
+      setCaptureState('idle');
+      if (label) {
+        onCapture(label);
+      }
+    }, SHEET_CLOSE_MS);
+  };
+
+  const handleFlamePress = () => {
+    if (screenReaderOn && captureState === 'idle') {
+      setCaptureState('active');
+      setCaptureDraft('');
+    }
+  };
+
+  const captureCardStyle = useAnimatedStyle(() => ({
+    bottom: TAB_BAR_BOTTOM + TAB_BAR_HEIGHT + CAPTURE_GAP + keyboard.height.value,
+  }));
 
   const baseTabBarStyle = {
     position: 'absolute' as const,
@@ -301,7 +439,16 @@ export default function TabsLayout() {
         </View>
         <Tabs
           tabBar={(props) => (
-            <RisingTabBar {...props} isDark={isDark} onFlamePress={handleFlamePress} />
+            <RisingTabBar
+              {...props}
+              isDark={isDark}
+              fill={fill}
+              fillOpacity={fillOpacity}
+              glow={glow}
+              onCaptureBegin={beginHold}
+              onCaptureEnd={endHold}
+              onCapturePress={handleFlamePress}
+            />
           )}
           screenOptions={{
             headerShown: false,
@@ -357,7 +504,38 @@ export default function TabsLayout() {
             }}
           />
         </Tabs>
-        <StayTunedToast visible={stayTunedVisible} />
+        {captureState === 'active' || captureState === 'closing' ? (
+          <Animated.View
+            style={[
+              { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+              captureCardStyle,
+            ]}
+            entering={reduceMotion ? undefined : FadeIn.duration(340)}
+            exiting={reduceMotion ? undefined : FadeOut.duration(380)}
+          >
+            <View
+              className="w-[86%] rounded-2xl bg-white px-[17px] py-[15px] dark:bg-[#1d1d1d]"
+              style={{
+                shadowColor: '#000',
+                shadowOpacity: 0.14,
+                shadowRadius: 32,
+                shadowOffset: { width: 0, height: 12 },
+                elevation: 8,
+              }}
+            >
+              <TextInput
+                autoFocus
+                value={captureDraft}
+                onChangeText={setCaptureDraft}
+                onSubmitEditing={submitCapture}
+                returnKeyType="done"
+                placeholder={strings.tasks.newTaskPlaceholder}
+                placeholderTextColor="#b6b3ab"
+                className="text-[15.5px] leading-5 text-[#2a2a28] dark:text-[#f2f1ee]"
+              />
+            </View>
+          </Animated.View>
+        ) : null}
       </View>
     </TaskProvider>
   );
