@@ -23,7 +23,21 @@ import '../global.css';
 
 SplashScreenExpo.preventAutoHideAsync();
 
+// LogBox.ignoreLogs only hides the in-app red/yellow box; the underlying
+// console.warn still fires and reaches Metro/remote-debugger consoles. This
+// specific warning isn't ours to fix — NativeWind's react-native-css-interop
+// runtime unconditionally registers className support for the deprecated
+// core SafeAreaView (alongside the correct react-native-safe-area-context
+// one) on every app boot, which alone triggers React Native's warnOnce for
+// it, regardless of whether SafeAreaView is ever rendered.
 LogBox.ignoreLogs(['SafeAreaView has been deprecated']);
+const originalConsoleWarn = console.warn;
+console.warn = (...args: Parameters<typeof console.warn>) => {
+  if (typeof args[0] === 'string' && args[0].includes('SafeAreaView has been deprecated')) {
+    return;
+  }
+  originalConsoleWarn(...args);
+};
 
 type Phase = 'splash' | 'welcome' | 'app';
 

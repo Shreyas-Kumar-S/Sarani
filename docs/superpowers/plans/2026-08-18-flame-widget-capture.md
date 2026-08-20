@@ -37,7 +37,7 @@
 
 No widget dependency in this task. Fully buildable and demoable under the app's current setup, before Task 2's dev-client move.
 
-- [ ] **Step 1: State machine**
+- [x] **Step 1: State machine**
 
 Five states, matching the spec exactly: `idle | holding | active | closing`. (`coda` is demo-only — see the note in Step 7; it isn't part of the state machine's real-build path at all, since the real build's post-`closing` behavior is just "return to idle," not a distinct visible state.)
 
@@ -113,7 +113,7 @@ const submitCapture = () => {
 };
 ```
 
-- [ ] **Step 2: Ring geometry**
+- [x] **Step 2: Ring geometry**
 
 Exact values from the spec — slot 42×42, ring canvas 52×52 offset −5 on both axes (concentric, overhangs by 5px), `r=24.5`, stroke 2.5, circumference `2π×24.5 = 153.94`.
 
@@ -175,7 +175,7 @@ JSX — a sibling of the existing glow `Svg`, before the flame `<Image>`:
 
 The linear/cubic-bezier easing split from the spec matters: `beginHold`'s fill uses `Easing.linear` (it's a progress meter — any ease makes the threshold feel early or late), `endHold`'s rewind uses `Easing.bezier(0.22, 0.61, 0.36, 1)` (a release should feel dismissed, not mechanically undone).
 
-- [ ] **Step 3: Reduce-motion**
+- [x] **Step 3: Reduce-motion**
 
 ```tsx
   const reduceMotion = useReducedMotion(); // from 'react-native-reanimated'
@@ -205,7 +205,7 @@ Reduce-motion skips the ring sweep and cross-fades but keeps the real `HOLD_MS` 
 
 (Same guard pattern in `endHold`.) The sheet's own entrance (Step 4) similarly skips its slide/fade under reduce-motion and just appears.
 
-- [ ] **Step 4: Capture sheet, keyboard-relative not hardcoded**
+- [x] **Step 4: Capture sheet, keyboard-relative not hardcoded**
 
 The spec's prototype used fixed pixel values (keyboard 280, tab bar bottom 296, card bottom 386) because it's a static HTML mock with one fixed keyboard height. The spec itself flags this: *"drive the sheet's offset from `useAnimatedKeyboard()` rather than a fixed 280"* and *"if you change the keyboard height or bar height, recompute [386] — the first build had it at 312 and it overlapped."* Deriving every offset from the real keyboard height, on the UI thread, fixes that failure mode structurally rather than by picking a better constant — it can't drift out of sync with the tab bar, on any device, in any keyboard configuration.
 
@@ -262,7 +262,7 @@ import { FadeIn, FadeOut } from 'react-native-reanimated';
 
 Note: the spec's "Done key replaces the keyboard's return key" (a custom 86px accessory view) is an iOS `inputAccessoryView` concept without a direct cross-platform RN equivalent; `returnKeyType="done"` plus `onSubmitEditing` gives the same *function* (Done submits) without the custom key styling. Building a literal custom accessory view is a reasonable follow-up, not required for this task's definition of done.
 
-- [ ] **Step 5: Accessibility — plain-tap fallback, never require a hold**
+- [x] **Step 5: Accessibility — plain-tap fallback, never require a hold**
 
 ```tsx
   const [screenReaderOn, setScreenReaderOn] = useState(false);
@@ -302,7 +302,7 @@ Rename `FlameTeaserButton` to `FlameCaptureButton` (it's no longer a teaser) and
     >
 ```
 
-- [ ] **Step 6: Wire the capture callback, stubbed for now**
+- [x] **Step 6: Wire the capture callback, stubbed for now**
 
 ```tsx
   // Task 5 gives this a real body (pushes to both widgets). Stubbed here so
@@ -310,7 +310,7 @@ Rename `FlameTeaserButton` to `FlameCaptureButton` (it's no longer a teaser) and
   const onCapture = (_label: string) => {};
 ```
 
-- [ ] **Step 7: Retire the teaser strings, add the real ones**
+- [x] **Step 7: Retire the teaser strings, add the real ones**
 
 In `constants/strings.ts`, remove `nav.flameToast` and `a11y.flameTeaser` (no longer used — the flame isn't a teaser anymore), add:
 
@@ -324,7 +324,7 @@ In `constants/strings.ts`, remove `nav.flameToast` and `a11y.flameTeaser` (no lo
 
 If `strings.nav` has no other entries once `flameToast` is removed, remove the now-empty `nav` block entirely rather than leaving it hollow.
 
-- [ ] **Step 8: Manual verification**
+- [x] **Step 8: Manual verification**
 
 No jest coverage in this task — gesture timing and Reanimated worklets don't run meaningfully under the mocked test environment (`jest/reanimatedMock.cjs` fires `withTiming` callbacks synchronously, not over real time). On a device or simulator:
 1. Hold the flame — ring should sweep clockwise from 12 o'clock over a visibly-linear ~650ms, haptic fires right as the sheet appears, field is focused with the keyboard already up.
@@ -333,12 +333,12 @@ No jest coverage in this task — gesture timing and Reanimated worklets don't r
 4. Enable reduce-motion (iOS: Settings → Accessibility → Motion; Android: system animation scale) — confirm the sheet still appears after a real 650ms hold, just without the ring sweep or fades.
 5. Confirm the card never overlaps the tab bar on both a small (e.g. iPhone SE-class) and large (e.g. Pro Max-class) screen, with and without a home indicator.
 
-- [ ] **Step 9: Full verification**
+- [x] **Step 9: Full verification**
 
 Run: `npx tsc --noEmit && npx expo lint`
 Expected: both clean.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add "app/(tabs)/_layout.tsx" constants/strings.ts

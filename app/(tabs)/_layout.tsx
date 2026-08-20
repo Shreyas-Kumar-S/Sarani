@@ -3,9 +3,10 @@ import { Feather } from '@expo/vector-icons';
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
 import { strings } from '@/constants/strings';
 import { useAppRevealed } from '@/hooks/AppReveal';
+import { BlurTargetProvider, useBlurTarget } from '@/hooks/BlurTarget';
 import { TabKey, TaskProvider, useTabAllComplete } from '@/hooks/TaskStore';
 import { BottomTabBarProps } from 'expo-router/js-tabs';
-import { BlurView } from 'expo-blur';
+import { BlurTargetView, BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'nativewind';
@@ -14,6 +15,7 @@ import {
   AccessibilityInfo,
   ColorValue,
   Image,
+  Keyboard,
   Pressable,
   StyleSheet,
   Text,
@@ -199,7 +201,7 @@ function RisingTabBar({
   const revealed = useAppRevealed();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const progress = useSharedValue(revealed ? 1 : 0);
-  const keyboard = useAnimatedKeyboard();
+  const blurTarget = useBlurTarget();
 
   useEffect(() => {
     if (revealed) {
@@ -213,7 +215,6 @@ function RisingTabBar({
   const riseStyle = useAnimatedStyle(() => ({
     opacity: progress.value,
     transform: [{ translateY: (1 - progress.value) * BAR_RISE_DISTANCE }],
-    bottom: TAB_BAR_BOTTOM + keyboard.height.value,
   }));
 
   const activeColor = isDark ? '#9DB89A' : '#7A9B76';
@@ -227,6 +228,7 @@ function RisingTabBar({
           position: 'absolute',
           left: SCREEN_WIDTH * 0.04,
           right: SCREEN_WIDTH * 0.04,
+          bottom: TAB_BAR_BOTTOM,
           height: TAB_BAR_HEIGHT,
           borderRadius: TAB_BAR_RADIUS,
           borderWidth: 1,
@@ -250,6 +252,7 @@ function RisingTabBar({
       >
         <BlurView
           blurMethod="dimezisBlurView"
+          blurTarget={blurTarget}
           intensity={isDark ? 28 : 42}
           tint={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
@@ -320,11 +323,13 @@ export default function TabsLayout() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const blurTargetRef = useRef<View>(null);
 
   const [captureState, setCaptureState] = useState<CaptureState>('idle');
   const [captureDraft, setCaptureDraft] = useState('');
   const [screenReaderOn, setScreenReaderOn] = useState(false);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const captureInputRef = useRef<TextInput>(null);
   const fill = useSharedValue(0);
   const fillOpacity = useSharedValue(0);
   const glow = useSharedValue(0);
@@ -401,6 +406,22 @@ export default function TabsLayout() {
     }, SHEET_CLOSE_MS);
   };
 
+  const submitCaptureRef = useRef(submitCapture);
+  useEffect(() => {
+    submitCaptureRef.current = submitCapture;
+  });
+
+  useEffect(() => {
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      if (captureInputRef.current?.isFocused()) {
+        captureInputRef.current.blur();
+        submitCaptureRef.current();
+      }
+    });
+
+    return () => hideSub.remove();
+  }, []);
+
   const handleFlamePress = () => {
     if (screenReaderOn && captureState === 'idle') {
       setCaptureState('active');
@@ -432,111 +453,116 @@ export default function TabsLayout() {
   };
 
   return (
-    <TaskProvider>
-      <View style={{ flex: 1 }}>
-        <View style={StyleSheet.absoluteFill} className="bg-surface-page dark:bg-surface-dark-page">
-          <AnimatedBackground />
-        </View>
-        <Tabs
-          tabBar={(props) => (
-            <RisingTabBar
-              {...props}
-              isDark={isDark}
-              fill={fill}
-              fillOpacity={fillOpacity}
-              glow={glow}
-              onCaptureBegin={beginHold}
-              onCaptureEnd={endHold}
-              onCapturePress={handleFlamePress}
-            />
-          )}
-          screenOptions={{
-            headerShown: false,
-            sceneStyle: { backgroundColor: 'transparent' },
-            tabBarActiveTintColor: isDark ? '#9DB89A' : '#7A9B76',
-            tabBarInactiveTintColor: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)',
-            tabBarStyle: baseTabBarStyle,
-            tabBarBackground: () => (
-              <BlurView
-                blurMethod="dimezisBlurView"
-                intensity={isDark ? 28 : 42}
-                tint={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 38, overflow: 'hidden' }]}
-              />
-            ),
-            tabBarLabelStyle: {
-              fontSize: 12,
-            },
-          }}
-        >
-          <Tabs.Screen
-            name="today"
-            options={{
-              title: strings.tabs.today,
-              tabBarIcon: ({ color, size }) => (
-                <TaskTabIcon tab="today" color={color} size={size} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="upcoming"
-            options={{
-              title: strings.tabs.upcoming,
-              tabBarIcon: ({ color, size }) => (
-                <TaskTabIcon tab="upcoming" color={color} size={size} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="someday"
-            options={{
-              title: strings.tabs.someday,
-              tabBarIcon: ({ color, size }) => (
-                <TaskTabIcon tab="someday" color={color} size={size} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="history"
-            options={{
-              title: strings.tabs.history,
-              tabBarIcon: ({ color, size }) => <Feather name="clock" size={size} color={color} />,
-            }}
-          />
-        </Tabs>
-        {captureState === 'active' || captureState === 'closing' ? (
-          <Animated.View
-            style={[
-              { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
-              captureCardStyle,
-            ]}
-            entering={reduceMotion ? undefined : FadeIn.duration(340)}
-            exiting={reduceMotion ? undefined : FadeOut.duration(380)}
+    <BlurTargetProvider target={blurTargetRef}>
+      <TaskProvider>
+        <View style={{ flex: 1 }}>
+          <View
+            style={StyleSheet.absoluteFill}
+            className="bg-surface-page dark:bg-surface-dark-page"
           >
-            <View
-              className="w-[86%] rounded-2xl bg-white px-[17px] py-[15px] dark:bg-[#1d1d1d]"
-              style={{
-                shadowColor: '#000',
-                shadowOpacity: 0.14,
-                shadowRadius: 32,
-                shadowOffset: { width: 0, height: 12 },
-                elevation: 8,
-              }}
-            >
-              <TextInput
-                autoFocus
-                value={captureDraft}
-                onChangeText={setCaptureDraft}
-                onSubmitEditing={submitCapture}
-                returnKeyType="done"
-                placeholder={strings.tasks.newTaskPlaceholder}
-                placeholderTextColor="#b6b3ab"
-                className="text-[15.5px] leading-5 text-[#2a2a28] dark:text-[#f2f1ee]"
+            <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
+              <AnimatedBackground />
+            </BlurTargetView>
+          </View>
+          <Tabs
+            tabBar={(props) => (
+              <RisingTabBar
+                {...props}
+                isDark={isDark}
+                fill={fill}
+                fillOpacity={fillOpacity}
+                glow={glow}
+                onCaptureBegin={beginHold}
+                onCaptureEnd={endHold}
+                onCapturePress={handleFlamePress}
               />
-            </View>
-          </Animated.View>
-        ) : null}
-      </View>
-    </TaskProvider>
+            )}
+            screenOptions={{
+              headerShown: false,
+              sceneStyle: { backgroundColor: 'transparent' },
+              tabBarActiveTintColor: isDark ? '#9DB89A' : '#7A9B76',
+              tabBarInactiveTintColor: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)',
+              tabBarStyle: baseTabBarStyle,
+              tabBarBackground: () => (
+                <BlurView
+                  blurMethod="dimezisBlurView"
+                  blurTarget={blurTargetRef}
+                  intensity={isDark ? 28 : 42}
+                  tint={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 38, overflow: 'hidden' }]}
+                />
+              ),
+              tabBarLabelStyle: {
+                fontSize: 12,
+              },
+            }}
+          >
+            <Tabs.Screen
+              name="today"
+              options={{
+                title: strings.tabs.today,
+                tabBarIcon: ({ color, size }) => (
+                  <TaskTabIcon tab="today" color={color} size={size} />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="upcoming"
+              options={{
+                title: strings.tabs.upcoming,
+                tabBarIcon: ({ color, size }) => (
+                  <TaskTabIcon tab="upcoming" color={color} size={size} />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="someday"
+              options={{
+                title: strings.tabs.someday,
+                tabBarIcon: ({ color, size }) => (
+                  <TaskTabIcon tab="someday" color={color} size={size} />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="history"
+              options={{
+                title: strings.tabs.history,
+                tabBarIcon: ({ color, size }) => <Feather name="clock" size={size} color={color} />,
+              }}
+            />
+          </Tabs>
+          {captureState === 'active' || captureState === 'closing' ? (
+            <Animated.View
+              style={[
+                { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+                captureCardStyle,
+              ]}
+              entering={reduceMotion ? undefined : FadeIn.duration(340)}
+              exiting={reduceMotion ? undefined : FadeOut.duration(380)}
+            >
+              <View
+                className="w-[86%] rounded-2xl"
+                style={{ boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.14)' }}
+              >
+                <View className="overflow-hidden rounded-2xl bg-white px-[17px] py-[15px] dark:bg-[#1d1d1d]">
+                  <TextInput
+                    ref={captureInputRef}
+                    autoFocus
+                    value={captureDraft}
+                    onChangeText={setCaptureDraft}
+                    onBlur={submitCapture}
+                    returnKeyType="done"
+                    placeholder={strings.tasks.newTaskPlaceholder}
+                    placeholderTextColor="#b6b3ab"
+                    className="text-[15.5px] leading-5 text-[#2a2a28] dark:text-[#f2f1ee]"
+                  />
+                </View>
+              </View>
+            </Animated.View>
+          ) : null}
+        </View>
+      </TaskProvider>
+    </BlurTargetProvider>
   );
 }
