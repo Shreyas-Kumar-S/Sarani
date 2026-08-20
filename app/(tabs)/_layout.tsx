@@ -53,12 +53,6 @@ const RING_OPACITY_OUT_MS = 220;
 const SHEET_CLOSE_MS = 420;
 const CAPTURE_GAP = 16;
 
-const RING_CANVAS = 52;
-const RING_OFFSET = -5;
-const RING_RADIUS = 24.5;
-const RING_STROKE_WIDTH = 2.5;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
-
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 type CaptureState = 'idle' | 'holding' | 'active' | 'closing';
@@ -74,6 +68,12 @@ const FLAME_ICON_DARK = require('@/assets/images/flame_black.png');
 const GLOW_SIZE = 64;
 const ICON_SIZE = 24;
 const GLOW_OFFSET = -(GLOW_SIZE - ICON_SIZE) / 2;
+
+const RING_CANVAS = 52;
+const RING_OFFSET = -(RING_CANVAS - ICON_SIZE) / 2;
+const RING_RADIUS = 24.5;
+const RING_STROKE_WIDTH = 2.5;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 function FlameCaptureButton({
   isDark,
