@@ -1,24 +1,15 @@
 {
   "expo": {
-    "name": "Serein",
+    "name": "Sarani",
     "slug": "serein",
-    "scheme": "serein",
+    "scheme": "sarani",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icons/app-icon-light.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/icons/app-icon-light.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FAF8F5",
-      "dark": {
-        "image": "./assets/icons/app-icon-dark.png",
-        "backgroundColor": "#141414"
-      }
-    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.shreyas.serein",
+      "bundleIdentifier": "com.shreyas.sarani",
       "icon": {
         "light": "./assets/icons/app-icon-light.png",
         "dark": "./assets/icons/app-icon-dark.png"
@@ -32,7 +23,7 @@
         "foregroundImage": "./assets/icons/app-icon-light.png",
         "backgroundColor": "#FAF8F5"
       },
-      "package": "com.shreyas.serein"
+      "package": "com.shreyas.sarani"
     },
     "web": {
       "favicon": "./assets/icons/app-icon.png"
@@ -46,11 +37,16 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#FAF8F5",
-          "dark": { "image": "./assets/icons/app-icon-dark.png", "backgroundColor": "#141414" }
+          "dark": {
+            "image": "./assets/icons/app-icon-dark.png",
+            "backgroundColor": "#141414"
+          }
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-image",
+      "expo-status-bar"
     ],
     "extra": {
       "router": {},

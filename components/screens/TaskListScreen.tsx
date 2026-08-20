@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useColorScheme } from 'nativewind';
-import { Keyboard, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Keyboard, Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import BaseScreen from './BaseScreen';
 import GlassCard from '@/components/ui/GlassCard';
 import Header from '@/components/ui/Header';
@@ -43,8 +44,7 @@ export default function TaskListScreen({
   const [editing, setEditing] = useState<{ section: number; item: number } | null>(null);
   const [editDraft, setEditDraft] = useState('');
   const inputRef = useRef<TextInput>(null);
-  // Set on the commit button's pressIn (which fires before the input's blur)
-  // so the blur handler knows to keep the input open for rapid entry.
+  const editInputRef = useRef<TextInput>(null);
   const keepInputOpenRef = useRef(false);
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -57,7 +57,6 @@ export default function TaskListScreen({
     }
 
     setIsAddingTask(true);
-    requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   const submitTask = () => {
@@ -83,23 +82,6 @@ export default function TaskListScreen({
     }
   };
 
-  // Some keyboard-dismiss gestures (iOS swipe-down, Android back) hide the
-  // keyboard without ever blurring the TextInput, so the row otherwise stays
-  // stuck open with a "focused" input the user can't close. isFocused() still
-  // reporting true here is exactly that case (a real blur, e.g. from the
-  // commit button, has already cleared it by the time this fires), so force
-  // the same close/submit path onBlur would have taken.
-  useEffect(() => {
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      if (isAddingTask && inputRef.current?.isFocused()) {
-        inputRef.current.blur();
-        handleInputBlur();
-      }
-    });
-
-    return () => hideSub.remove();
-  });
-
   const startEditingTask = (sectionIndex: number, itemIndex: number, label: string) => {
     if (!onEditTask) {
       return;
@@ -109,8 +91,6 @@ export default function TaskListScreen({
     setEditDraft(label);
   };
 
-  // Saves the trimmed draft if there is one; an emptied draft cancels the edit
-  // rather than deleting the task (deletion has its own deliberate gesture).
   const commitEdit = () => {
     if (!editing) {
       return;
@@ -126,10 +106,39 @@ export default function TaskListScreen({
     setEditDraft('');
   };
 
+  const handleInputBlurRef = useRef(handleInputBlur);
+  const commitEditRef = useRef(commitEdit);
+  useEffect(() => {
+    handleInputBlurRef.current = handleInputBlur;
+    commitEditRef.current = commitEdit;
+  });
+
+  useEffect(() => {
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      if (inputRef.current?.isFocused()) {
+        inputRef.current.blur();
+        handleInputBlurRef.current();
+      }
+
+      if (editInputRef.current?.isFocused()) {
+        editInputRef.current.blur();
+        commitEditRef.current();
+      }
+    });
+
+    return () => hideSub.remove();
+  }, []);
+
   return (
     <BaseScreen className="pt-2">
       <Header title={greeting} />
-      <ScrollView contentContainerClassName="pt-5" showsVerticalScrollIndicator={false}>
+      <KeyboardAwareScrollView
+        contentContainerStyle={{ paddingTop: 20 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        bottomOffset={24}
+      >
         <GlassCard className="px-5 py-6">
           {sections.map((section, sectionIndex) => (
             <View
@@ -140,14 +149,16 @@ export default function TaskListScreen({
               <View className="rounded-[22px] px-4 py-2">
                 {section.items.map((item, index) => (
                   <Animated.View
-                    key={`${section.title}-${item.label}-${index}`}
+                    key={`${section.title}-${item.label}`}
                     entering={FadeInDown.duration(220)}
+                    exiting={FadeOut.duration(300)}
                     className="border-b border-ink-quaternary/15 dark:border-ink-dark-quaternary/15 last:border-b-0"
                   >
                     {editing?.section === sectionIndex && editing?.item === index ? (
-                      <View className="flex-row items-center py-[13px]">
+                      <View className="flex-row items-center py-[10px]">
                         <TextInput
                           accessibilityLabel={strings.a11y.editTaskInput}
+                          ref={editInputRef}
                           value={editDraft}
                           onChangeText={setEditDraft}
                           onSubmitEditing={commitEdit}
@@ -157,7 +168,7 @@ export default function TaskListScreen({
                           placeholderTextColor={
                             isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.28)'
                           }
-                          className="flex-1 text-[21px] leading-7 text-ink-secondary dark:text-ink-dark-secondary"
+                          className="flex-1 text-[17px] leading-6 text-ink-secondary dark:text-ink-dark-secondary"
                         />
                         <Pressable
                           accessibilityRole="button"
@@ -178,6 +189,7 @@ export default function TaskListScreen({
                         time={item.time}
                         checked={item.checked}
                         carriedOver={item.carriedOver}
+                        decayed={item.decayed}
                         onToggle={
                           onToggleTask ? () => onToggleTask(sectionIndex, index) : undefined
                         }
@@ -197,19 +209,18 @@ export default function TaskListScreen({
                   </Animated.View>
                 ))}
                 {canAddTasks && isAddingTask && sectionIndex === 0 ? (
-                  <View className="flex-row items-center border-t border-ink-quaternary/15 dark:border-ink-dark-quaternary/15 py-[13px]">
+                  <View className="flex-row items-center border-t border-ink-quaternary/15 dark:border-ink-dark-quaternary/15 py-[10px]">
                     <TextInput
                       accessibilityLabel={strings.a11y.newTaskInput}
                       ref={inputRef}
                       value={draftTask}
                       onChangeText={setDraftTask}
-                      onSubmitEditing={submitTask}
                       onBlur={handleInputBlur}
-                      submitBehavior="submit"
+                      autoFocus
                       returnKeyType="done"
                       placeholder={strings.tasks.newTaskPlaceholder}
                       placeholderTextColor={isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.28)'}
-                      className="flex-1 text-[21px] leading-7 text-ink-secondary dark:text-ink-dark-secondary"
+                      className="flex-1 text-[17px] leading-6 text-ink-secondary dark:text-ink-dark-secondary"
                     />
                     <Pressable
                       accessibilityRole="button"
@@ -246,7 +257,7 @@ export default function TaskListScreen({
             </Text>
           </View>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </BaseScreen>
   );
 }

@@ -1,4 +1,4 @@
-import { applyDailyRollover } from '../rollover';
+import { applyDailyRollover, sweepCompletedFromOtherTabs } from '../rollover';
 import type { TabKey } from '../TaskStore';
 import { TaskItem } from '@/types/task';
 
@@ -58,5 +58,69 @@ describe('applyDailyRollover', () => {
 
     expect(result.changed).toBe(true);
     expect(result.tasksByTab.today).toEqual([]);
+  });
+});
+
+describe('sweepCompletedFromOtherTabs', () => {
+  it('drops checked Upcoming tasks', () => {
+    const input = tabs({
+      upcoming: [
+        { label: 'done', checked: true },
+        { label: 'not done', checked: false },
+      ],
+    });
+
+    const result = sweepCompletedFromOtherTabs(input);
+
+    expect(result.upcoming).toEqual([{ label: 'not done', checked: false }]);
+  });
+
+  it('drops checked Someday tasks', () => {
+    const input = tabs({
+      someday: [
+        { label: 'done', checked: true },
+        { label: 'not done', checked: false },
+      ],
+    });
+
+    const result = sweepCompletedFromOtherTabs(input);
+
+    expect(result.someday).toEqual([{ label: 'not done', checked: false }]);
+  });
+
+  it('leaves unchecked tasks in both Upcoming and Someday', () => {
+    const upcoming = [{ label: 'later', checked: false }];
+    const someday = [{ label: 'maybe', checked: false }];
+    const input = tabs({ upcoming, someday });
+
+    const result = sweepCompletedFromOtherTabs(input);
+
+    expect(result.upcoming).toEqual(upcoming);
+    expect(result.someday).toEqual(someday);
+  });
+
+  it('leaves Today completely untouched', () => {
+    const today = [
+      { label: 'done', checked: true },
+      { label: 'not done', checked: false },
+    ];
+    const input = tabs({ today });
+
+    const result = sweepCompletedFromOtherTabs(input);
+
+    expect(result.today).toBe(today);
+  });
+
+  it('returns a genuinely new object rather than mutating the input', () => {
+    const input = tabs({
+      upcoming: [{ label: 'done', checked: true }],
+      someday: [{ label: 'done', checked: true }],
+    });
+
+    const result = sweepCompletedFromOtherTabs(input);
+
+    expect(result).not.toBe(input);
+    expect(input.upcoming).toEqual([{ label: 'done', checked: true }]);
+    expect(input.someday).toEqual([{ label: 'done', checked: true }]);
   });
 });

@@ -162,6 +162,11 @@ export default function WelcomeCurtain({
         <Text className="text-4xl font-bold text-ink-primary dark:text-ink-dark-primary text-center">
           {strings.welcome.title}
         </Text>
+        {/* Enters with the title rather than on its own beat — it reads as part
+            of the name, not as another line of copy to get through. */}
+        <Text className="mt-2 font-serif text-[13px] leading-5 text-center text-ink-secondary dark:text-ink-dark-secondary">
+          {strings.welcome.nameMeaning}
+        </Text>
       </Animated.View>
 
       <Animated.View style={taglineStyle} className="items-center mb-8">

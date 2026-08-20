@@ -125,10 +125,6 @@ function CarouselCard({
   );
 }
 
-// A coverflow-style fan of cards: tap any card, or swipe left/right, to bring
-// it to the center. `activeIndex` is fully controlled by the parent — this
-// component only owns the animated transition toward whatever index it's
-// given, so tapping and swiping both flow through the same onChange callback.
 export default function SectionCarousel({
   items,
   activeIndex,
@@ -138,10 +134,6 @@ export default function SectionCarousel({
   const progress = useSharedValue(activeIndex);
 
   useEffect(() => {
-    // Animate via the shortest circular path rather than straight to the raw
-    // index — otherwise wrapping from the last card back to the first (or vice
-    // versa) tweens `progress` through every card in between, which reads as
-    // snapping backward instead of continuing the same rotation forward.
     const total = items.length;
     const current = ((progress.value % total) + total) % total;
     let delta = activeIndex - current;
@@ -149,10 +141,6 @@ export default function SectionCarousel({
     if (delta < -total / 2) delta += total;
 
     progress.value = withTiming(progress.value + delta, { duration: 350 }, (finished) => {
-      // Once settled, re-anchor to the plain canonical index (same rendered
-      // position, since the per-card offset math wraps by `total` either way)
-      // so `progress.value` doesn't drift further from [0, total) with every
-      // rotation over a long session.
       if (finished) {
         progress.value = activeIndex;
       }

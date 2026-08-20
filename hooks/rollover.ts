@@ -32,3 +32,21 @@ export function applyDailyRollover(
     changed: true,
   };
 }
+
+// Companion to applyDailyRollover: drops any already-checked Upcoming/Someday
+// task at load time. In-session removal (hooks/TaskStore.tsx's
+// scheduleCompletedRemoval) only fires from the toggle/promote path, so a
+// task checked before this feature shipped — or checked in a session that
+// closed before its 700ms delay elapsed — would otherwise stay checked in
+// the live tab forever. Safe for History: that completion was already
+// written into otherCompletions on the day it was checked (see toggleTask),
+// so nothing is lost by dropping it here.
+export function sweepCompletedFromOtherTabs(
+  tasksByTab: Record<TabKey, TaskItem[]>
+): Record<TabKey, TaskItem[]> {
+  return {
+    ...tasksByTab,
+    upcoming: tasksByTab.upcoming.filter((task) => !task.checked),
+    someday: tasksByTab.someday.filter((task) => !task.checked),
+  };
+}

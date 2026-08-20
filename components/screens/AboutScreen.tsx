@@ -47,9 +47,6 @@ export default function AboutScreen() {
   const isDark = colorScheme === 'dark';
   const accentColor = isDark ? '#9DB89A' : '#7A9B76';
 
-  // Sourced from Sanity (falls back to the shipped defaults offline) so devs
-  // can add/reorder/retire upcoming features without an app release.
-
   const { config } = useAppConfig();
   const [activeSection, setActiveSection] = useState<SectionKey>('today');
   const active = strings.about.sections[activeSection];
@@ -88,8 +85,13 @@ export default function AboutScreen() {
           paddingHorizontal: 24,
         }}
       >
-        {/* No top margin — the header's own bottom padding plus this
-            ScrollView's paddingTop already form the gap above this text. */}
+        <Text className="mb-3 text-[13px] font-bold tracking-wide text-primary">
+          {strings.about.nameLabel}
+        </Text>
+        <Text className="mb-8 text-balance text-[17px] leading-6 text-ink-secondary dark:text-ink-dark-secondary">
+          {strings.about.nameMeaning}
+        </Text>
+
         <Text className="mb-10 text-balance text-[17px] leading-6 text-ink-secondary dark:text-ink-dark-secondary">
           {strings.about.coreIdea}
         </Text>

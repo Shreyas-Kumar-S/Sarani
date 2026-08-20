@@ -87,7 +87,7 @@ export const SplashLogoLight: React.FC<SplashLogoProps> = ({ width = 350, height
         letterSpacing="2"
         animatedProps={textAnimatedProps}
       >
-        Serein
+        Sarani
       </AnimatedSvgText>
       <AnimatedSvgText
         x="512"
@@ -170,7 +170,7 @@ export const SplashLogoDark: React.FC<SplashLogoProps> = ({ width = 350, height 
         letterSpacing="2"
         animatedProps={textAnimatedProps}
       >
-        Serein
+        Sarani
       </AnimatedSvgText>
       <AnimatedSvgText
         x="512"

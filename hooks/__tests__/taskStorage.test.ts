@@ -6,7 +6,7 @@ beforeEach(async () => {
 });
 
 describe('taskStorage', () => {
-  it('round-trips saved state through load', async () => {
+  it('round-trips saved state through load, backfilling createdAt for pre-existing tasks', async () => {
     const state: PersistedState = {
       tasksByTab: {
         today: [{ label: 'breathe', checked: false }],
@@ -17,9 +17,34 @@ describe('taskStorage', () => {
     };
 
     await saveTasks(state);
-    const loaded = await loadTasks();
+    const loaded = await loadTasks('2026-07-02');
 
-    expect(loaded).toEqual(state);
+    expect(loaded).toEqual({
+      tasksByTab: {
+        today: [{ label: 'breathe', checked: false, createdAt: '2026-07-02' }],
+        upcoming: [{ label: 'walk', checked: true, createdAt: '2026-07-02' }],
+        someday: [],
+      },
+      lastOpenedDate: '2026-07-02',
+    });
+  });
+
+  it('leaves an existing createdAt untouched rather than overwriting it', async () => {
+    await AsyncStorage.setItem(
+      'sarani.tasks.v1',
+      JSON.stringify({
+        tasksByTab: {
+          today: [{ label: 'old task', checked: false, createdAt: '2026-01-01' }],
+          upcoming: [],
+          someday: [],
+        },
+        lastOpenedDate: '2026-07-02',
+      })
+    );
+
+    const loaded = await loadTasks('2026-07-05');
+
+    expect(loaded?.tasksByTab.today[0].createdAt).toBe('2026-01-01');
   });
 
   it('returns null when nothing is stored (first run)', async () => {
@@ -28,7 +53,7 @@ describe('taskStorage', () => {
 
   it('returns null on malformed stored data', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    await AsyncStorage.setItem('serein.tasks.v1', 'not json{');
+    await AsyncStorage.setItem('sarani.tasks.v1', 'not json{');
 
     expect(await loadTasks()).toBeNull();
     expect(warn).toHaveBeenCalled();
@@ -38,7 +63,7 @@ describe('taskStorage', () => {
 
   it('merges over empty defaults so a missing tab key never crashes', async () => {
     await AsyncStorage.setItem(
-      'serein.tasks.v1',
+      'sarani.tasks.v1',
       JSON.stringify({ tasksByTab: { today: [{ label: 'x' }] }, lastOpenedDate: '2026-07-02' })
     );
 

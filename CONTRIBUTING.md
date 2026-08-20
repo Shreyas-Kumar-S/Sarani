@@ -1,6 +1,6 @@
-# Contributing to Serein
+# Contributing to Sarani
 
-Thanks for considering pitching in. Serein is a calm, minimalist task manager — "move gently forward" isn't just the tagline, it's meant to shape how the code reads too: prefer quiet, deliberate choices over clever ones. This doc gets you from a fresh clone to a running app and a mental model of the codebase.
+Thanks for considering pitching in. Sarani is a calm, minimalist task manager — "move gently forward" isn't just the tagline, it's meant to shape how the code reads too: prefer quiet, deliberate choices over clever ones. This doc gets you from a fresh clone to a running app and a mental model of the codebase.
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ Thanks for considering pitching in. Serein is a calm, minimalist task manager �
 
 ```bash
 git clone <repo-url>
-cd Serein
+cd Sarani
 yarn install
 yarn start          # Expo dev server — scan the QR with Expo Go, or press i / a / w
 ```

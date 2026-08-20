@@ -5,17 +5,20 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
+import { isDecayed } from '@/lib/taskDecay';
 import { TaskItem } from '@/types/task';
 import { HistoryByDate, loadHistory, saveHistory } from './historyStorage';
-import { applyDailyRollover } from './rollover';
+import { applyDailyRollover, sweepCompletedFromOtherTabs } from './rollover';
 import { loadTasks, saveTasks, todayString } from './taskStorage';
 
 export type TabKey = 'today' | 'upcoming' | 'someday';
 
 type TaskStore = {
   tasksByTab: Record<TabKey, TaskItem[]>;
+  today: string;
   todaySnapshots: HistoryByDate;
   otherCompletions: HistoryByDate;
   addTask: (tab: TabKey, label: string) => void;
@@ -51,6 +54,40 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   // Lazy state initializer so todayString() runs once, not on every render.
   const [today] = useState(todayString);
 
+  // Delay before a just-completed Upcoming/Someday task disappears from the
+  // live tab into History — long enough that the checkmark itself is seen
+  // before the row goes away, short enough that it still reads as one
+  // motion ("this moved to History") rather than two.
+  const COMPLETED_REMOVAL_DELAY_MS = 700;
+  // Pending removal timers, tracked so a still-mounted TaskProvider never
+  // calls setState after it's gone (test cleanup unmounts synchronously;
+  // this timer doesn't). Cleared on unmount below.
+  const pendingRemovals = useRef(new Set<ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    return () => {
+      pendingRemovals.current.forEach(clearTimeout);
+      pendingRemovals.current.clear();
+    };
+  }, []);
+
+  // Removes `completedTask` from `tab` by object identity, not index — an
+  // index captured now could point at a different task by the time this
+  // fires, if anything else in the tab changes during the delay. Toggling
+  // the task back to unchecked before the timer fires is naturally a no-op:
+  // un-checking creates a new object (a fresh `{...t, checked: false}`), so
+  // the originally-captured checked reference simply no longer matches
+  // anything in the array by the time this runs.
+  const scheduleCompletedRemoval = useCallback((tab: TabKey, completedTask: TaskItem) => {
+    const timer = setTimeout(() => {
+      pendingRemovals.current.delete(timer);
+      setTasksByTab((prev) => ({
+        ...prev,
+        [tab]: prev[tab].filter((t) => t !== completedTask),
+      }));
+    }, COMPLETED_REMOVAL_DELAY_MS);
+    pendingRemovals.current.add(timer);
+  }, []);
+
   // Load once on mount: read saved state, apply the daily rollover, adopt it,
   // then record the rolled result + today's date so the rollover isn't redone
   // even if the user makes no edits this session. History loads alongside it.
@@ -58,22 +95,27 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     (async () => {
-      const [loadedTasks, loadedHistory] = await Promise.all([loadTasks(), loadHistory()]);
+      const [loadedTasks, loadedHistory] = await Promise.all([loadTasks(today), loadHistory()]);
       const { tasksByTab: rolled } = applyDailyRollover(
         loadedTasks?.tasksByTab ?? EMPTY_TASKS,
         loadedTasks?.lastOpenedDate,
         today
       );
+      // Drops any Upcoming/Someday task left checked from before this
+      // feature shipped (or from a session killed mid-delay) — see
+      // sweepCompletedFromOtherTabs' comment in ./rollover for why this
+      // can't just be handled by the in-session removal timer alone.
+      const swept = sweepCompletedFromOtherTabs(rolled);
 
       if (cancelled) {
         return;
       }
 
-      setTasksByTab(rolled);
+      setTasksByTab(swept);
       setTodaySnapshots(loadedHistory?.todaySnapshots ?? {});
       setOtherCompletions(loadedHistory?.otherCompletions ?? {});
       setHydrated(true);
-      saveTasks({ tasksByTab: rolled, lastOpenedDate: today });
+      saveTasks({ tasksByTab: swept, lastOpenedDate: today });
     })();
 
     return () => {
@@ -109,9 +151,15 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasksByTab.today, otherCompletions, today, hydrated]);
 
-  const addTask = useCallback((tab: TabKey, label: string) => {
-    setTasksByTab((prev) => ({ ...prev, [tab]: [...prev[tab], { label, checked: false }] }));
-  }, []);
+  const addTask = useCallback(
+    (tab: TabKey, label: string) => {
+      setTasksByTab((prev) => ({
+        ...prev,
+        [tab]: [...prev[tab], { label, checked: false, createdAt: today }],
+      }));
+    },
+    [today]
+  );
 
   // Upcoming/Someday tasks aren't tied to a day the way Today is, so a
   // completion there is logged into today's history entry directly —
@@ -126,10 +174,11 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       }
 
       const nextChecked = !task.checked;
+      const nextTask = { ...task, checked: nextChecked };
 
       setTasksByTab((prev) => ({
         ...prev,
-        [tab]: prev[tab].map((t, i) => (i === itemIndex ? { ...t, checked: nextChecked } : t)),
+        [tab]: prev[tab].map((t, i) => (i === itemIndex ? nextTask : t)),
       }));
 
       if (tab !== 'today') {
@@ -148,9 +197,13 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             ? prevOther
             : { ...prevOther, [today]: withoutExisting };
         });
+
+        if (nextChecked) {
+          scheduleCompletedRemoval(tab, nextTask);
+        }
       }
     },
-    [tasksByTab, today]
+    [tasksByTab, today, scheduleCompletedRemoval]
   );
 
   const removeTask = useCallback((tab: TabKey, itemIndex: number) => {
@@ -193,14 +246,16 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             [today]: [...withoutExisting, { label: task.label, checked: true }],
           };
         });
+        scheduleCompletedRemoval('upcoming', promoted);
       }
     },
-    [tasksByTab, today]
+    [tasksByTab, today, scheduleCompletedRemoval]
   );
 
   const value = useMemo(
     () => ({
       tasksByTab,
+      today,
       todaySnapshots,
       otherCompletions,
       addTask,
@@ -211,6 +266,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     }),
     [
       tasksByTab,
+      today,
       todaySnapshots,
       otherCompletions,
       addTask,
@@ -233,18 +289,51 @@ function useTaskStore() {
 }
 
 // Screen-facing hook — mirrors the section/item signature TaskListScreen expects.
+//
+// Completed tasks sink to the bottom so the next actionable item stays in view
+// instead of being pushed below a wall of finished ones. This is *display*
+// order only: the stored array keeps insertion order, so un-checking a task
+// returns it to where it was, and History (which mirrors tasksByTab.today
+// verbatim) is unaffected.
+//
+// Every mutation in the store is keyed on the task's index in that stored
+// array, so reordering for display without translating indices would send a
+// toggle to whichever task happened to land in that slot. `order` maps a
+// displayed position back to its stored one, and every callback below goes
+// through it.
 export function useTaskList(tab: TabKey) {
-  const { tasksByTab, addTask, toggleTask, removeTask, editTask, promoteToUpcoming } =
+  const { tasksByTab, today, addTask, toggleTask, removeTask, editTask, promoteToUpcoming } =
     useTaskStore();
+  const stored = tasksByTab[tab];
+
+  const { tasks, order } = useMemo(() => {
+    // Array.prototype.sort is stable, so each group keeps its insertion order.
+    const indices = stored.map((_, index) => index);
+    indices.sort((a, b) => Number(stored[a].checked) - Number(stored[b].checked));
+    const ordered = indices.map((index) => stored[index]);
+
+    // Decay is a Tomorrow-only concept — see the comment on TaskItem.decayed.
+    const displayed =
+      tab === 'upcoming'
+        ? ordered.map((task) => ({ ...task, decayed: isDecayed(task, today) }))
+        : ordered;
+
+    return { tasks: displayed, order: indices };
+  }, [stored, tab, today]);
+
+  const storedIndex = (displayIndex: number) => order[displayIndex] ?? displayIndex;
+
   return {
-    tasks: tasksByTab[tab],
+    tasks,
     addTask: (label: string) => addTask(tab, label),
-    toggleTask: (_sectionIndex: number, itemIndex: number) => toggleTask(tab, itemIndex),
-    removeTask: (_sectionIndex: number, itemIndex: number) => removeTask(tab, itemIndex),
+    toggleTask: (_sectionIndex: number, itemIndex: number) =>
+      toggleTask(tab, storedIndex(itemIndex)),
+    removeTask: (_sectionIndex: number, itemIndex: number) =>
+      removeTask(tab, storedIndex(itemIndex)),
     editTask: (_sectionIndex: number, itemIndex: number, label: string) =>
-      editTask(tab, itemIndex, label),
+      editTask(tab, storedIndex(itemIndex), label),
     // Only meaningful on the Today tab; other tabs simply never wire it.
-    promoteTask: (itemIndex: number) => promoteToUpcoming(itemIndex),
+    promoteTask: (itemIndex: number) => promoteToUpcoming(storedIndex(itemIndex)),
   };
 }
 

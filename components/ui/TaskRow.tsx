@@ -12,19 +12,19 @@ type TaskRowProps = {
   time?: string;
   checked?: boolean;
   carriedOver?: boolean;
+  decayed?: boolean;
   onToggle?: () => void;
   onLabelPress?: () => void;
   onDelete?: () => void;
   onTagPress?: () => void;
 };
 
-// Row gesture language (app-wide): tap the checkbox to complete, tap the text
-// to edit, swipe left to let go.
 export default function TaskRow({
   label,
   time,
   checked,
   carriedOver,
+  decayed,
   onToggle,
   onLabelPress,
   onDelete,
@@ -38,7 +38,7 @@ export default function TaskRow({
   };
 
   const row = (
-    <View className="flex-row items-center py-[13px]">
+    <View className="flex-row items-center py-[10px]">
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: Boolean(checked) }}
@@ -60,7 +60,7 @@ export default function TaskRow({
         onPress={onLabelPress}
       >
         <Text
-          className={`text-[21px] leading-7 text-ink-secondary dark:text-ink-dark-secondary ${
+          className={`text-[17px] font-medium leading-6 text-ink-secondary dark:text-ink-dark-secondary ${
             checked ? 'line-through opacity-55' : ''
           }`}
         >
@@ -80,8 +80,13 @@ export default function TaskRow({
           </Text>
         </Pressable>
       ) : null}
+      {decayed ? (
+        <View className="ml-3 rounded-full bg-primary/15 px-2.5 py-1">
+          <Text className="text-[12px] font-medium text-primary">{strings.tasks.decayedTag}</Text>
+        </View>
+      ) : null}
       {time ? (
-        <Text className="ml-3 text-[17px] text-ink-tertiary dark:text-ink-dark-tertiary">
+        <Text className="ml-3 text-[15px] text-ink-tertiary dark:text-ink-dark-tertiary">
           {time}
         </Text>
       ) : null}
