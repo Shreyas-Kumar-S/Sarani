@@ -147,6 +147,36 @@ platforms from the start rather than Android-first. The gesture/ring/sheet
 both need no native toolchain and can land, and be demoed, before the
 dev-client move (plan Task 3) — Task 1 already has, Task 2 is next.
 
+## 6. `expo-doctor` findings — deferred, not urgent
+
+**Status:** not started. Explicitly deprioritized — noted for later, not part
+of the active work above.
+
+Running `npx expo-doctor` surfaces 2 failing checks (20/22 pass):
+
+- **Hermes V1 memory regression.** This project's `expo@56.0.18` ships a
+  Hermes build (`250829098.0.10`) affected by a known memory regression;
+  the fix landed in `250829098.0.16`. Expo's own advice is to upgrade to
+  Expo SDK 57 (`expo@^57.0.9` or later) via `npx expo install expo@^57.0.9 --fix`,
+  which pulls in React Native 0.86.2+ (the first RN version bundling the
+  fixed Hermes). See https://expo.dev/changelog/sdk-57#known-regressions.
+- **7 packages behind their SDK 56 patch versions** (`@expo/metro-runtime`,
+  `expo`, `expo-constants`, `expo-image`, `expo-linking`, `expo-router`,
+  `expo-symbols`) — fixable independently of the SDK 57 question via
+  `npx expo install --check`.
+
+**Why deferred:** an SDK bump (54→56) already happened once this session;
+another major-version jump (56→57) mid-flame-widget-work is exactly the kind
+of change that risks destabilizing the native toolchain currently mid-use for
+Tasks 3–7 (dev client, `react-native-android-widget`, eventually
+`expo-widgets`). Worth doing once the flame/widget work reaches a stable
+resting point, not interleaved with it.
+
+**Size:** small for the patch-version bump alone (`npx expo install --check`);
+medium for the full SDK 57 upgrade, since that's a real dependency-graph
+change (React Native 0.85→0.86+) that needs the same tsc/lint/test/on-device
+verification pass as the SDK 54→56 upgrade got.
+
 ---
 
 ## Why this order
