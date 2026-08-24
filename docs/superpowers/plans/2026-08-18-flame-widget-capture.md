@@ -567,56 +567,63 @@ git commit -m "feat: Daily Focus data layer and dual-mode flame sheet"
 
 ---
 
-## Task 3: Move to a custom dev client
+## Task 3: Move to a custom dev client — DONE (Android), iOS held
+
+**Status:** Android complete — verified end-to-end on a physical device. iOS
+not attempted: ad-hoc/EAS builds to a real iPhone require a paid Apple
+Developer Program membership, which doesn't exist yet. This is a harder
+blocker than the original plan assumed (it framed this as "register the
+device's UDID," implying an account already existed) — nothing iOS-specific
+in Tasks 5/7 can proceed until that membership exists.
 
 **Files:**
 - Modify: `package.json`
-- Modify: `app.json`
 
 **Interfaces:**
-- Produces: a working `expo-dev-client` build (Android and iOS) running today's app identically to Expo Go. Tasks 4–7 depend on this.
+- Produces: a working `expo-dev-client` build (Android) running today's app identically to Expo Go. Task 4 depends on this; Tasks 5/7's iOS halves are blocked until a paid Apple Developer account exists.
 
-- [ ] **Step 1: Install expo-dev-client**
+- [x] **Step 1: Install expo-dev-client**
 
 ```bash
 npx expo install expo-dev-client
 ```
 
-- [ ] **Step 2: Prebuild both platforms**
+- [x] **Step 2: Prebuild**
 
 ```bash
 npx expo prebuild
 ```
 
-Generates `android/` and `ios/` fresh. On Windows, the `ios/` project can't be opened locally, but `prebuild` still generates it correctly for EAS's cloud build to consume.
+**Correction from the original plan:** this does *not* generate `ios/` on Windows at all — Expo's CLI explicitly refuses ("Run `npx expo prebuild` again from macOS or Linux to generate the iOS project"), it's not just "can't be opened locally" as originally assumed. This isn't a blocker in itself: EAS Build's cloud macOS runner generates `ios/` on its own as part of an iOS build, for a config-plugin/CNG project like this one — nothing needs to be pre-generated locally for that to work. `android/` regenerated locally without issue.
 
-- [ ] **Step 3: Build development clients**
+- [x] **Step 3: Build the development client**
 
 Using the existing `development` profile in `eas.json` (`developmentClient: true`, already present, never used until now):
 
 ```bash
 eas build --profile development --platform android
-eas build --profile development --platform ios
 ```
 
-Install the Android APK on a device/emulator. For iOS, install via the link EAS provides after the build (requires the device's UDID to already be registered with your Apple Developer account for ad-hoc distribution — register it first if this is a new device; this is a manual Apple Developer portal step, not something the agent can do).
+Installed the resulting APK on a physical Android device via the link EAS provides after the build.
 
-- [ ] **Step 4: Manual verification — parity with Expo Go, both platforms**
+(iOS's equivalent — `eas build --profile development --platform ios` — is not run; see "Status" above.)
+
+- [x] **Step 4: Manual verification — parity with Expo Go**
 
 ```bash
 npx expo start --dev-client
 ```
 
-On both an Android device/emulator and a physical iPhone: confirm the whole app (all tabs, History, About, dark mode, and the flame's declare/manage sheet from Tasks 1–2) looks and behaves identically to how it did before this task.
+Confirmed on a physical Android device: the whole app (all tabs, dark mode, and the flame's declare/manage sheet from Tasks 1–2) looks and behaves identically to how it did before this task.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
-git add package.json app.json eas.json
+git add package.json yarn.lock
 git commit -m "chore: move to a custom dev client to unblock native widget work"
 ```
 
-(`android/`/`ios/` are prebuild-generated — check `.gitignore` before adding; the standard Expo/CNG setup keeps them out of version control since they're regenerable.)
+(`android/`/`ios/` are prebuild-generated — check `.gitignore` before adding; the standard Expo/CNG setup keeps them out of version control since they're regenerable. `app.json`/`eas.json` needed no changes — the `development` build profile already existed.)
 
 ---
 
@@ -816,7 +823,9 @@ git commit -m "feat: Android home-screen widget rendering the Daily Focus conten
 
 ---
 
-## Task 5: iOS widget spike — the same content model
+## Task 5: iOS widget spike — the same content model — ON HOLD
+
+**Blocked:** Task 3 confirmed a paid Apple Developer Program membership doesn't exist yet. `eas build --profile development --platform ios` needs one for ad-hoc distribution to a real device — this task can't be verified (and arguably shouldn't be attempted) until that account exists. Revisit once it does; nothing below has changed as a result.
 
 **Files:**
 - Modify: `app.json`
