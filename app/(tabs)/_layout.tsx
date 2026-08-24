@@ -4,6 +4,13 @@ import AnimatedBackground from '@/components/ui/AnimatedBackground';
 import { strings } from '@/constants/strings';
 import { useAppRevealed } from '@/hooks/AppReveal';
 import { BlurTargetProvider, useBlurTarget } from '@/hooks/BlurTarget';
+import {
+  completeDailyFocus,
+  DailyFocus,
+  declareDailyFocus,
+  deleteDailyFocus,
+  loadDailyFocus,
+} from '@/hooks/dailyFocus';
 import { TabKey, TaskProvider, useTabAllComplete } from '@/hooks/TaskStore';
 import { BottomTabBarProps } from 'expo-router/js-tabs';
 import { BlurTargetView, BlurView } from 'expo-blur';
@@ -328,6 +335,7 @@ export default function TabsLayout() {
   const [captureState, setCaptureState] = useState<CaptureState>('idle');
   const [captureDraft, setCaptureDraft] = useState('');
   const [screenReaderOn, setScreenReaderOn] = useState(false);
+  const [dailyFocus, setDailyFocus] = useState<DailyFocus | null>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const captureInputRef = useRef<TextInput>(null);
   const fill = useSharedValue(0);
@@ -335,11 +343,16 @@ export default function TabsLayout() {
   const glow = useSharedValue(0);
   const keyboard = useAnimatedKeyboard();
   const reduceMotion = useReducedMotion();
+  const isManaging = dailyFocus?.status === 'active';
 
   useEffect(() => {
     AccessibilityInfo.isScreenReaderEnabled().then(setScreenReaderOn);
     const sub = AccessibilityInfo.addEventListener('screenReaderChanged', setScreenReaderOn);
     return () => sub.remove();
+  }, []);
+
+  useEffect(() => {
+    loadDailyFocus().then(setDailyFocus);
   }, []);
 
   const clearHoldTimer = () => {
@@ -351,7 +364,10 @@ export default function TabsLayout() {
 
   useEffect(() => clearHoldTimer, []);
 
-  const onCapture = (_label: string) => {};
+  const onCapture = async (label: string) => {
+    const next = await declareDailyFocus(label);
+    setDailyFocus(next);
+  };
 
   const beginHold = () => {
     if (captureState !== 'idle') {
@@ -365,7 +381,7 @@ export default function TabsLayout() {
     holdTimer.current = setTimeout(() => {
       holdTimer.current = null;
       setCaptureState('active');
-      setCaptureDraft('');
+      setCaptureDraft(isManaging ? (dailyFocus?.label ?? '') : '');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       if (!reduceMotion) {
         fill.value = 1;
@@ -393,17 +409,40 @@ export default function TabsLayout() {
     }
   };
 
-  const submitCapture = () => {
-    const label = captureDraft.trim();
+  // Shared close animation, with an optional callback for whatever should
+  // happen once the sheet has actually finished closing. Complete/Delete use
+  // this directly (no callback) so they never touch captureDraft — reusing
+  // submitCapture there would re-read a stale, possibly pre-filled draft and
+  // fire a spurious duplicate declare right after completing/deleting.
+  const closeSheet = (onClosed?: () => void) => {
     setCaptureState('closing');
     fillOpacity.value = 0;
     fill.value = 0;
     setTimeout(() => {
       setCaptureState('idle');
+      onClosed?.();
+    }, SHEET_CLOSE_MS);
+  };
+
+  const submitCapture = () => {
+    const label = captureDraft.trim();
+    closeSheet(() => {
       if (label) {
         onCapture(label);
       }
-    }, SHEET_CLOSE_MS);
+    });
+  };
+
+  const handleCompleteFocus = async () => {
+    const next = await completeDailyFocus();
+    setDailyFocus(next);
+    closeSheet();
+  };
+
+  const handleDeleteFocus = async () => {
+    const next = await deleteDailyFocus();
+    setDailyFocus(next);
+    closeSheet();
   };
 
   const submitCaptureRef = useRef(submitCapture);
@@ -425,7 +464,7 @@ export default function TabsLayout() {
   const handleFlamePress = () => {
     if (screenReaderOn && captureState === 'idle') {
       setCaptureState('active');
-      setCaptureDraft('');
+      setCaptureDraft(isManaging ? (dailyFocus?.label ?? '') : '');
     }
   };
 
@@ -546,6 +585,28 @@ export default function TabsLayout() {
                 style={{ boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.14)' }}
               >
                 <View className="overflow-hidden rounded-2xl bg-white px-[17px] py-[15px] dark:bg-[#1d1d1d]">
+                  {isManaging ? (
+                    <View className="flex-row justify-end gap-4 pb-2">
+                      <Pressable
+                        onPress={handleDeleteFocus}
+                        accessibilityRole="button"
+                        accessibilityLabel={strings.a11y.deleteFocus}
+                      >
+                        <Text className="text-[13px] text-[#a15c5c]">
+                          {strings.tasks.deleteFocus}
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={handleCompleteFocus}
+                        accessibilityRole="button"
+                        accessibilityLabel={strings.a11y.completeFocus}
+                      >
+                        <Text className="text-[13px] text-primary">
+                          {strings.tasks.completeFocus}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  ) : null}
                   <TextInput
                     ref={captureInputRef}
                     autoFocus

@@ -84,6 +84,8 @@ export const strings = {
     carriedOverTag: 'Undone',
     // First-pass copy — wording deliberately deferred; change freely.
     decayedTag: 'Been a while',
+    completeFocus: 'Complete',
+    deleteFocus: 'Delete',
   },
 
   actions: {
@@ -102,6 +104,8 @@ export const strings = {
     moveToUpcoming: 'Move to Upcoming',
     addTask: 'Add task',
     addTaskHint: 'Press and hold to capture a task',
+    completeFocus: 'Complete your One Thing',
+    deleteFocus: 'Delete your One Thing',
   },
 
   errorBoundary: {
