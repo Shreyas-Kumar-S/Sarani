@@ -389,7 +389,7 @@ git commit -m "feat: flame long-press gesture, ring, and capture sheet"
 
 No native toolchain needed here — this is the JS/AsyncStorage half of the renegotiated spec (see "Decisions locked in" above for the full data model and copy table).
 
-- [ ] **Step 1: The Daily Focus store**
+- [x] **Step 1: The Daily Focus store**
 
 Create `hooks/dailyFocus.ts`, reusing the existing `todayString()` helper from `hooks/taskStorage.ts` rather than reimplementing date formatting:
 
@@ -450,7 +450,7 @@ export const completeDailyFocus = () => persist(EMPTY('completed'));
 export const deleteDailyFocus = () => persist(EMPTY('deleted'));
 ```
 
-- [ ] **Step 2: Load it once on mount**
+- [x] **Step 2: Load it once on mount**
 
 In `TabsLayout` (`app/(tabs)/_layout.tsx`), alongside the existing capture state:
 
@@ -464,7 +464,7 @@ In `TabsLayout` (`app/(tabs)/_layout.tsx`), alongside the existing capture state
 
 `dailyFocus === null` means "not loaded yet" (first frame only); treat it the same as `unset` for rendering purposes, but don't let the flame's press handlers act until it resolves, to avoid a declare/manage flicker on cold start.
 
-- [ ] **Step 3: Dual-mode press handling**
+- [x] **Step 3: Dual-mode press handling**
 
 `handleFlamePress` (the screen-reader plain-tap path) and the hold-to-`active` transition in `beginHold` both currently do the same thing unconditionally: open a blank sheet. Both need to branch on whether `dailyFocus?.status === 'active'`:
 
@@ -477,7 +477,7 @@ In `TabsLayout` (`app/(tabs)/_layout.tsx`), alongside the existing capture state
   setCaptureDraft(isManaging ? (dailyFocus!.label ?? '') : '');
 ```
 
-- [ ] **Step 4: Manage-mode sheet UI**
+- [x] **Step 4: Manage-mode sheet UI**
 
 The sheet's `TextInput` (Task 1, Step 4) stays as the single text field for both modes — declaring and replacing both end with typed text + submit. Manage mode adds two actions above/beside it, visible only when `isManaging`:
 
@@ -512,7 +512,7 @@ The sheet's `TextInput` (Task 1, Step 4) stays as the single text field for both
 
 `submitCapture` (Task 1) already closes the sheet and, separately, calls `onCapture(label)` only if `captureDraft` is non-empty — Complete/Delete should clear the draft first (`setCaptureDraft('')`) so that close doesn't also fire a spurious declare.
 
-- [ ] **Step 5: `onCapture` writes a real declare/replace**
+- [x] **Step 5: `onCapture` writes a real declare/replace**
 
 Replace Task 1's stub:
 
@@ -524,7 +524,7 @@ Replace Task 1's stub:
   };
 ```
 
-- [ ] **Step 6: Copy**
+- [x] **Step 6: Copy**
 
 In `constants/strings.ts`, add (exact placement/grouping is a detail — keep near the existing `tasks`/`a11y` blocks):
 
@@ -543,11 +543,11 @@ In `constants/strings.ts`, add (exact placement/grouping is a detail — keep ne
 
 The three widget-facing copy states ("What's the one thing for today?", "Your Next 1thing!", "Your 1thing?") belong to the widget content model, not this file — see Task 4/5. The capture sheet's own `TextInput` placeholder is unchanged from Task 1 (`strings.tasks.newTaskPlaceholder`, "New task") for both declare and replace; revisit only if that reads oddly once it's actually on screen next to the "One Thing" framing.
 
-- [ ] **Step 7: Full verification**
+- [x] **Step 7: Full verification**
 
 Run: `npx tsc --noEmit && npx expo lint`
 
-- [ ] **Step 8: Manual verification**
+- [x] **Step 8: Manual verification**
 
 1. Long-press the flame with nothing set — blank sheet, same as Task 1.
 2. Type a task, submit — sheet closes; confirm (via a temporary log or the next task's widget once built) that a Daily Focus was persisted, and confirm the task did **not** appear in Today.
@@ -558,7 +558,7 @@ Run: `npx tsc --noEmit && npx expo lint`
 7. Repeat 2–3, then tap Delete instead of Complete — same blank-sheet-on-next-open outcome, different persisted status.
 8. Force-quit and relaunch the app the same day — the previously `active` focus (if any) is still shown in manage mode; nothing resets just from restarting.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add "app/(tabs)/_layout.tsx" constants/strings.ts hooks/dailyFocus.ts
