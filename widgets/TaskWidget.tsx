@@ -36,18 +36,27 @@ export function TaskWidget({
   status,
   label,
   theme = 'light',
+  width,
+  height,
 }: {
   status: DailyFocusStatus;
   label: string | null;
   theme?: keyof typeof THEME;
+  // Real widget bounds in dp, from the task handler's widgetInfo. Passed
+  // explicitly because 'match_parent' leaves the rendered card smaller than
+  // the launcher's actual cell — the library's documented size-discrepancy
+  // limitation, which it resolves by cropping. Falls back to match_parent
+  // for callers that have no size info (e.g. requestWidgetUpdate).
+  width?: number;
+  height?: number;
 }) {
   const t = THEME[theme];
   const text = copyFor(status, label);
   return (
     <FlexWidget
       style={{
-        width: 'match_parent',
-        height: 'match_parent',
+        width: width ?? 'match_parent',
+        height: height ?? 'match_parent',
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: t.surface,
@@ -72,7 +81,7 @@ export function TaskWidget({
       <FlexWidget style={{ width: 16, height: 1 }} />
       <TextWidget
         text={text}
-        maxLines={2}
+        maxLines={3}
         style={{ fontSize: 19, fontWeight: 'bold', color: t.text, lineHeight: 25 }}
       />
     </FlexWidget>

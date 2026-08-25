@@ -12,8 +12,14 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
     case 'WIDGET_UPDATE':
     case 'WIDGET_RESIZED': {
       const focus = await loadDailyFocus();
+      const { width, height } = props.widgetInfo;
       props.renderWidget(
-        React.createElement(TaskWidget, { status: focus.status, label: focus.label })
+        React.createElement(TaskWidget, {
+          status: focus.status,
+          label: focus.label,
+          width,
+          height,
+        })
       );
       break;
     }
