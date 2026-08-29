@@ -596,7 +596,7 @@ export default function TabsLayout() {
                   reach into any screen. Tapping it blurs the input, which is
                   already the single commit-and-close path. */}
               <Animated.View
-                style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.32)' }]}
+                style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.68)' }]}
                 entering={reduceMotion ? undefined : FadeIn.duration(340)}
                 exiting={reduceMotion ? undefined : FadeOut.duration(380)}
               >
