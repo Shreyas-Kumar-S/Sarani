@@ -44,7 +44,9 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { requestWidgetUpdate } from 'react-native-android-widget';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
+import { TaskWidget } from '@/widgets/TaskWidget';
 
 const BAR_RISE_DISTANCE = 130;
 const BAR_RISE_DELAY_MS = 200;
@@ -364,9 +366,31 @@ export default function TabsLayout() {
 
   useEffect(() => clearHoldTimer, []);
 
-  const onCapture = async (label: string) => {
-    const next = await declareDailyFocus(label);
+  // Pushes the new state to the home-screen widget immediately. Without this
+  // the widget only refreshes on its updatePeriodMillis tick (30 min, and
+  // Android batches those) or when added/resized — which reads as random,
+  // laggy updates rather than the instant reflection the flame implies.
+  // updatePeriodMillis stays as the backstop that clears the widget at
+  // midnight without the app being opened.
+  const pushWidgetUpdate = (focus: DailyFocus) => {
+    requestWidgetUpdate({
+      widgetName: 'Sarani',
+      renderWidget: () => (
+        <TaskWidget status={focus.status} label={focus.label} theme={isDark ? 'dark' : 'light'} />
+      ),
+      widgetNotFound: () => {
+        // No widget on the home screen yet — nothing to update, not an error.
+      },
+    });
+  };
+
+  const applyDailyFocus = (next: DailyFocus) => {
     setDailyFocus(next);
+    pushWidgetUpdate(next);
+  };
+
+  const onCapture = async (label: string) => {
+    applyDailyFocus(await declareDailyFocus(label));
   };
 
   const beginHold = () => {
@@ -409,39 +433,33 @@ export default function TabsLayout() {
     }
   };
 
-  // Shared close animation, with an optional callback for whatever should
-  // happen once the sheet has actually finished closing. Complete/Delete use
-  // this directly (no callback) so they never touch captureDraft — reusing
-  // submitCapture there would re-read a stale, possibly pre-filled draft and
-  // fire a spurious duplicate declare right after completing/deleting.
-  const closeSheet = (onClosed?: () => void) => {
+  // Purely the close animation — every caller now performs its own state
+  // change before calling this, so nothing is sequenced off the animation.
+  const closeSheet = () => {
     setCaptureState('closing');
     fillOpacity.value = 0;
     fill.value = 0;
-    setTimeout(() => {
-      setCaptureState('idle');
-      onClosed?.();
-    }, SHEET_CLOSE_MS);
+    setTimeout(() => setCaptureState('idle'), SHEET_CLOSE_MS);
   };
 
   const submitCapture = () => {
     const label = captureDraft.trim();
-    closeSheet(() => {
-      if (label) {
-        onCapture(label);
-      }
-    });
+    // Persist and push straight away rather than from closeSheet's callback:
+    // the write has nothing to do with the close animation, and waiting on it
+    // added SHEET_CLOSE_MS of dead time before the widget saw the new value.
+    if (label) {
+      onCapture(label);
+    }
+    closeSheet();
   };
 
   const handleCompleteFocus = async () => {
-    const next = await completeDailyFocus();
-    setDailyFocus(next);
+    applyDailyFocus(await completeDailyFocus());
     closeSheet();
   };
 
   const handleDeleteFocus = async () => {
-    const next = await deleteDailyFocus();
-    setDailyFocus(next);
+    applyDailyFocus(await deleteDailyFocus());
     closeSheet();
   };
 
@@ -572,55 +590,73 @@ export default function TabsLayout() {
             />
           </Tabs>
           {captureState === 'active' || captureState === 'closing' ? (
-            <Animated.View
-              style={[
-                { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
-                captureCardStyle,
-              ]}
-              entering={reduceMotion ? undefined : FadeIn.duration(340)}
-              exiting={reduceMotion ? undefined : FadeOut.duration(380)}
-            >
-              <View
-                className="w-[86%] rounded-2xl"
-                style={{ boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.14)' }}
+            <>
+              {/* Sits between the navigator and the capture card, so plain
+                  z-order dims everything behind the sheet without needing to
+                  reach into any screen. Tapping it blurs the input, which is
+                  already the single commit-and-close path. */}
+              <Animated.View
+                style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.32)' }]}
+                entering={reduceMotion ? undefined : FadeIn.duration(340)}
+                exiting={reduceMotion ? undefined : FadeOut.duration(380)}
               >
-                <View className="overflow-hidden rounded-2xl bg-white px-[17px] py-[15px] dark:bg-[#1d1d1d]">
-                  {isManaging ? (
-                    <View className="flex-row justify-end gap-4 pb-2">
-                      <Pressable
-                        onPress={handleDeleteFocus}
-                        accessibilityRole="button"
-                        accessibilityLabel={strings.a11y.deleteFocus}
-                      >
-                        <Text className="text-[13px] text-[#a15c5c]">
-                          {strings.tasks.deleteFocus}
-                        </Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={handleCompleteFocus}
-                        accessibilityRole="button"
-                        accessibilityLabel={strings.a11y.completeFocus}
-                      >
-                        <Text className="text-[13px] text-primary">
-                          {strings.tasks.completeFocus}
-                        </Text>
-                      </Pressable>
-                    </View>
-                  ) : null}
-                  <TextInput
-                    ref={captureInputRef}
-                    autoFocus
-                    value={captureDraft}
-                    onChangeText={setCaptureDraft}
-                    onBlur={submitCapture}
-                    returnKeyType="done"
-                    placeholder={strings.tasks.newTaskPlaceholder}
-                    placeholderTextColor="#b6b3ab"
-                    className="text-[15.5px] leading-5 text-[#2a2a28] dark:text-[#f2f1ee]"
-                  />
+                <Pressable
+                  style={StyleSheet.absoluteFill}
+                  accessibilityRole="button"
+                  accessibilityLabel={strings.a11y.dismissCapture}
+                  onPress={() => captureInputRef.current?.blur()}
+                />
+              </Animated.View>
+              <Animated.View
+                style={[
+                  { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+                  captureCardStyle,
+                ]}
+                entering={reduceMotion ? undefined : FadeIn.duration(340)}
+                exiting={reduceMotion ? undefined : FadeOut.duration(380)}
+              >
+                <View
+                  className="w-[86%] rounded-2xl"
+                  style={{ boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.14)' }}
+                >
+                  <View className="overflow-hidden rounded-2xl bg-white px-[17px] py-[15px] dark:bg-[#1d1d1d]">
+                    {isManaging ? (
+                      <View className="flex-row justify-end gap-4 pb-2">
+                        <Pressable
+                          onPress={handleDeleteFocus}
+                          accessibilityRole="button"
+                          accessibilityLabel={strings.a11y.deleteFocus}
+                        >
+                          <Text className="text-[13px] text-[#a15c5c]">
+                            {strings.tasks.deleteFocus}
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={handleCompleteFocus}
+                          accessibilityRole="button"
+                          accessibilityLabel={strings.a11y.completeFocus}
+                        >
+                          <Text className="text-[13px] text-primary">
+                            {strings.tasks.completeFocus}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    ) : null}
+                    <TextInput
+                      ref={captureInputRef}
+                      autoFocus
+                      value={captureDraft}
+                      onChangeText={setCaptureDraft}
+                      onBlur={submitCapture}
+                      returnKeyType="done"
+                      placeholder={strings.tasks.newTaskPlaceholder}
+                      placeholderTextColor="#b6b3ab"
+                      className="text-[15.5px] leading-5 text-[#2a2a28] dark:text-[#f2f1ee]"
+                    />
+                  </View>
                 </View>
-              </View>
-            </Animated.View>
+              </Animated.View>
+            </>
           ) : null}
         </View>
       </TaskProvider>

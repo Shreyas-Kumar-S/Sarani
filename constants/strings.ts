@@ -106,6 +106,7 @@ export const strings = {
     addTaskHint: 'Press and hold to capture a task',
     completeFocus: 'Complete your One Thing',
     deleteFocus: 'Delete your One Thing',
+    dismissCapture: 'Dismiss',
   },
 
   errorBoundary: {
