@@ -9,7 +9,10 @@ import { AppConfigProvider } from '@/hooks/AppConfigStore';
 import { AppRevealProvider } from '@/hooks/AppReveal';
 import { CaptureOverlayProvider, useCaptureOverlay } from '@/hooks/CaptureOverlay';
 import { hasSeenWelcome, markWelcomeSeen } from '@/hooks/welcomeSeen';
-import { Stack } from 'expo-router';
+import { SANITY_DATASET, SENTRY_DSN } from '@/constants/appConfig';
+import * as Sentry from '@sentry/react-native';
+import { isRunningInExpoGo } from 'expo';
+import { Stack, useNavigationContainerRef } from 'expo-router';
 import * as SplashScreenExpo from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
@@ -30,6 +33,31 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '../global.css';
 
 SplashScreenExpo.preventAutoHideAsync();
+
+// Deliberately conservative for an app whose whole promise is "No account.
+// No cloud." — sendDefaultPii stays off, so no IP address or device
+// identifiers ride along with a crash, and nothing about a user's tasks is
+// ever attached. What Sentry sees is a stack trace and the device/OS class.
+// Tracing is sampled low: this is here for crashes, and performance spans
+// would burn the free tier's quota for information nobody is reading yet.
+// Reuses the dataset split (see appConfig) so preview builds report as
+// development and only real releases land in the production environment.
+// expo-router builds on React Navigation, so this is the integration that
+// applies — it needs the navigation container handed to it once mounted,
+// which RootLayout does below.
+const navigationIntegration = Sentry.reactNavigationIntegration({
+  enableTimeToInitialDisplay: !isRunningInExpoGo(),
+});
+
+Sentry.init({
+  dsn: SENTRY_DSN,
+  enabled: SENTRY_DSN.length > 0,
+  environment: __DEV__ ? 'development' : SANITY_DATASET,
+  sendDefaultPii: false,
+  tracesSampleRate: 0.1,
+  integrations: [navigationIntegration],
+  enableNativeFramesTracking: !isRunningInExpoGo(),
+});
 
 // LogBox.ignoreLogs only hides the in-app red/yellow box; the underlying
 // console.warn still fires and reaches Metro/remote-debugger consoles. This
@@ -85,12 +113,21 @@ function FloatingControls({
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
   const [phase, setPhase] = useState<Phase>('splash');
 
   const skipWelcomeRef = useRef(false);
   const { colorScheme } = useColorScheme();
+
+  // Hands the live navigation container to the integration configured above,
+  // which is what turns route changes into breadcrumbs and screen spans.
+  const navigationRef = useNavigationContainerRef();
+  useEffect(() => {
+    if (navigationRef) {
+      navigationIntegration.registerNavigationContainer(navigationRef);
+    }
+  }, [navigationRef]);
 
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(colorScheme === 'dark' ? '#000000' : '#FBFAF8');
@@ -212,3 +249,7 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+// Sentry.wrap is what attaches the routing instrumentation and app-start
+// timing to the real root — expoRouterIntegration above only configures it.
+export default Sentry.wrap(RootLayout);

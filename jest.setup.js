@@ -30,3 +30,18 @@ jest.mock("@react-native-async-storage/async-storage", () =>
 jest.mock("react-native-keyboard-controller", () =>
   require("react-native-keyboard-controller/jest")
 );
+
+// The SDK ships ESM that jest-expo's transform doesn't cover, and a test run
+// has no business starting a crash reporter anyway. Mocked rather than added
+// to transformIgnorePatterns so the whole SDK isn't compiled on every run.
+// wrap() is identity here, which keeps the real root layout under test.
+jest.mock("@sentry/react-native", () => ({
+  init: jest.fn(),
+  wrap: (component) => component,
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  reactNavigationIntegration: jest.fn(() => ({
+    name: "ReactNavigation",
+    registerNavigationContainer: jest.fn(),
+  })),
+}));

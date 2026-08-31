@@ -64,7 +64,8 @@
             }
           ]
         }
-      ]
+      ],
+      "@sentry/react-native"
     ],
     "extra": {
       "router": {},
