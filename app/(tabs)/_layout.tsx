@@ -65,6 +65,11 @@ const RING_OPACITY_OUT_MS = 220;
 const SHEET_CLOSE_MS = 420;
 const CAPTURE_GAP = 16;
 
+// How long the "check your home screen" pill lingers. Long enough to read at
+// a glance, short enough that it's gone before it reads as something to
+// dismiss — it carries no action, so it should never wait on the user.
+const HINT_VISIBLE_MS = 2200;
+
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 type CaptureState = 'idle' | 'holding' | 'active' | 'closing';
@@ -339,7 +344,9 @@ export default function TabsLayout() {
   const [captureDraft, setCaptureDraft] = useState('');
   const [screenReaderOn, setScreenReaderOn] = useState(false);
   const [dailyFocus, setDailyFocus] = useState<DailyFocus | null>(null);
+  const [hintVisible, setHintVisible] = useState(false);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hintTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const captureInputRef = useRef<TextInput>(null);
   const fill = useSharedValue(0);
   const fillOpacity = useSharedValue(0);
@@ -375,6 +382,25 @@ export default function TabsLayout() {
   };
 
   useEffect(() => clearHoldTimer, []);
+
+  // Waits out the sheet's own close before appearing, so the pill isn't
+  // cross-fading against the card and scrim on their way out. Any pending
+  // pair is cleared first — a quick declare/replace/declare shouldn't leave
+  // an earlier hide timer racing the newer pill.
+  const showHomeScreenHint = () => {
+    hintTimers.current.forEach(clearTimeout);
+    hintTimers.current = [
+      setTimeout(() => setHintVisible(true), SHEET_CLOSE_MS),
+      setTimeout(() => setHintVisible(false), SHEET_CLOSE_MS + HINT_VISIBLE_MS),
+    ];
+  };
+
+  useEffect(
+    () => () => {
+      hintTimers.current.forEach(clearTimeout);
+    },
+    []
+  );
 
   // Pushes the new state to the home-screen widget immediately. Without this
   // the widget only refreshes on its updatePeriodMillis tick (30 min, and
@@ -466,6 +492,7 @@ export default function TabsLayout() {
     // added SHEET_CLOSE_MS of dead time before the widget saw the new value.
     if (label) {
       onCapture(label);
+      showHomeScreenHint();
     }
     closeSheet();
   };
@@ -674,6 +701,39 @@ export default function TabsLayout() {
                 </View>
               </Animated.View>
             </>
+          ) : null}
+          {/* Sits in the same slot the capture card just vacated — above the
+              tab bar, no keyboard term since the keyboard is gone by the time
+              this appears. Non-interactive by design: it reports where the
+              change landed and leaves on its own. */}
+          {hintVisible ? (
+            <Animated.View
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: TAB_BAR_BOTTOM + TAB_BAR_HEIGHT + CAPTURE_GAP,
+                alignItems: 'center',
+              }}
+              entering={reduceMotion ? undefined : FadeIn.duration(260)}
+              exiting={reduceMotion ? undefined : FadeOut.duration(320)}
+            >
+              <View
+                className="rounded-full"
+                style={{ boxShadow: '0px 6px 18px rgba(0, 0, 0, 0.12)' }}
+              >
+                <View
+                  className="overflow-hidden rounded-full bg-white px-4 py-2 dark:bg-[#1d1d1d]"
+                  accessibilityRole="alert"
+                  accessibilityLiveRegion="polite"
+                >
+                  <Text className="text-[12.5px] text-ink-secondary dark:text-ink-dark-secondary">
+                    {strings.tasks.focusDeclaredHint}
+                  </Text>
+                </View>
+              </View>
+            </Animated.View>
           ) : null}
         </View>
       </TaskProvider>

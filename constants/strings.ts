@@ -86,6 +86,10 @@ export const strings = {
     decayedTag: 'Been a while',
     completeFocus: 'Complete',
     deleteFocus: 'Delete',
+    // Shown once, briefly, after the flame sheet closes on a declare or
+    // replace — the widget has already updated by then and there is nothing
+    // in the app itself to look at, so this points at where the change landed.
+    focusDeclaredHint: 'Check your home screen',
   },
 
   actions: {
