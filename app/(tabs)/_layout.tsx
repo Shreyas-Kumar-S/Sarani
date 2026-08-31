@@ -382,12 +382,19 @@ export default function TabsLayout() {
   // laggy updates rather than the instant reflection the flame implies.
   // updatePeriodMillis stays as the backstop that clears the widget at
   // midnight without the app being opened.
+  // Both variants are rendered and handed to Android, which picks one per its
+  // own night mode. Sending a single tree resolved from this app's `isDark`
+  // looked right until the widget refreshed itself in the background — that
+  // path has no app state to read, so it fell back to light and a dark-mode
+  // home screen got a cream tile. The pair also means the widget re-themes on
+  // a system theme change without waiting for the app to push again.
   const pushWidgetUpdate = (focus: DailyFocus) => {
     requestWidgetUpdate({
       widgetName: 'Sarani',
-      renderWidget: () => (
-        <TaskWidget status={focus.status} label={focus.label} theme={isDark ? 'dark' : 'light'} />
-      ),
+      renderWidget: () => ({
+        light: <TaskWidget status={focus.status} label={focus.label} theme="light" />,
+        dark: <TaskWidget status={focus.status} label={focus.label} theme="dark" />,
+      }),
       widgetNotFound: () => {
         // No widget on the home screen yet — nothing to update, not an error.
       },
