@@ -7,6 +7,7 @@ import { UpdateGate } from '@/components/UpdateGate';
 import WelcomeCurtain, { PRIVACY_ENTER_AT } from '@/components/WelcomeCurtain';
 import { AppConfigProvider } from '@/hooks/AppConfigStore';
 import { AppRevealProvider } from '@/hooks/AppReveal';
+import { CaptureOverlayProvider, useCaptureOverlay } from '@/hooks/CaptureOverlay';
 import { hasSeenWelcome, markWelcomeSeen } from '@/hooks/welcomeSeen';
 import { Stack } from 'expo-router';
 import * as SplashScreenExpo from 'expo-splash-screen';
@@ -14,10 +15,17 @@ import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useColorScheme } from 'nativewind';
 import React, { useEffect, useRef, useState } from 'react';
-import { LogBox, View } from 'react-native';
+import { LogBox, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { Easing, runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  runOnJS,
+  SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '../global.css';
 
@@ -42,6 +50,40 @@ console.warn = (...args: Parameters<typeof console.warn>) => {
 type Phase = 'splash' | 'welcome' | 'app';
 
 const ALWAYS_SHOW_WELCOME = false;
+
+// Both controls are absolutely positioned against the full screen, so the
+// absoluteFill wrapper leaves their placement untouched. It exists to fade
+// and disable them together while the flame's capture sheet is open — they
+// render above that sheet's scrim and would otherwise stay lit and tappable
+// over a dimmed app. Timings match the scrim's own fades.
+function FloatingControls({
+  dock,
+  introDelay,
+  showInfo,
+}: {
+  dock: SharedValue<number>;
+  introDelay?: number;
+  showInfo: boolean;
+}) {
+  const { isCaptureOpen } = useCaptureOverlay();
+  const hidden = useSharedValue(0);
+
+  useEffect(() => {
+    hidden.value = withTiming(isCaptureOpen ? 1 : 0, { duration: isCaptureOpen ? 340 : 380 });
+  }, [isCaptureOpen, hidden]);
+
+  const fadeStyle = useAnimatedStyle(() => ({ opacity: 1 - hidden.value }));
+
+  return (
+    <Animated.View
+      pointerEvents={isCaptureOpen ? 'none' : 'box-none'}
+      style={[StyleSheet.absoluteFill, fadeStyle]}
+    >
+      <FloatingThemeToggle dock={dock} introDelay={introDelay} />
+      {showInfo ? <InfoButton /> : null}
+    </Animated.View>
+  );
+}
 
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
@@ -118,40 +160,47 @@ export default function RootLayout() {
                   />
                 ) : (
                   <AppRevealProvider revealed={phase === 'app'}>
-                    <View style={{ flex: 1 }}>
-                      <Stack
-                        screenOptions={{
-                          headerShown: false,
-                          contentStyle: {
-                            backgroundColor: colorScheme === 'dark' ? '#000000' : '#FBFAF8',
-                          },
-                        }}
-                      >
-                        <Stack.Screen name="index" />
-                        <Stack.Screen name="(tabs)" />
-                        <Stack.Screen
-                          name="about"
-                          options={{
-                            presentation: 'card',
-                            animation: 'slide_from_bottom',
+                    <CaptureOverlayProvider>
+                      <View style={{ flex: 1 }}>
+                        <Stack
+                          screenOptions={{
+                            headerShown: false,
                             contentStyle: {
                               backgroundColor: colorScheme === 'dark' ? '#000000' : '#FBFAF8',
                             },
                           }}
+                        >
+                          <Stack.Screen name="index" />
+                          <Stack.Screen name="(tabs)" />
+                          <Stack.Screen
+                            name="about"
+                            options={{
+                              presentation: 'card',
+                              animation: 'slide_from_bottom',
+                              contentStyle: {
+                                backgroundColor: colorScheme === 'dark' ? '#000000' : '#FBFAF8',
+                              },
+                            }}
+                          />
+                        </Stack>
+                        {phase === 'welcome' ? (
+                          <WelcomeCurtain
+                            curtainOpacity={curtainOpacity}
+                            onSequenceComplete={finishWelcome}
+                          />
+                        ) : null}
+                        {/* On a repeat launch the welcome curtain is skipped, so
+                          there is nothing to wait for — leaving introDelay
+                          undefined fell through to the component's 1200ms
+                          default and left the toggle missing for over a second
+                          after the app was already interactive. */}
+                        <FloatingControls
+                          dock={dock}
+                          introDelay={phase === 'welcome' ? PRIVACY_ENTER_AT : 0}
+                          showInfo={phase === 'app'}
                         />
-                      </Stack>
-                      {phase === 'welcome' ? (
-                        <WelcomeCurtain
-                          curtainOpacity={curtainOpacity}
-                          onSequenceComplete={finishWelcome}
-                        />
-                      ) : null}
-                      <FloatingThemeToggle
-                        dock={dock}
-                        introDelay={phase === 'welcome' ? PRIVACY_ENTER_AT : undefined}
-                      />
-                      {phase === 'app' ? <InfoButton /> : null}
-                    </View>
+                      </View>
+                    </CaptureOverlayProvider>
                   </AppRevealProvider>
                 )}
               </UpdateGate>

@@ -52,7 +52,7 @@ export default function HistoryScreen() {
           paddingHorizontal: SCREEN_PADDING_HORIZONTAL,
         }}
       >
-        <Text className="font-serif text-[32px] text-ink-primary dark:text-ink-dark-primary">
+        <Text className="font-serif text-[26px] text-ink-primary dark:text-ink-dark-primary">
           {activeMonth.fullLabel} {activeMonth.year}
         </Text>
 

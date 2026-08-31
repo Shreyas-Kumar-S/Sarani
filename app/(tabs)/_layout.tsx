@@ -4,6 +4,7 @@ import AnimatedBackground from '@/components/ui/AnimatedBackground';
 import { strings } from '@/constants/strings';
 import { useAppRevealed } from '@/hooks/AppReveal';
 import { BlurTargetProvider, useBlurTarget } from '@/hooks/BlurTarget';
+import { useCaptureOverlay } from '@/hooks/CaptureOverlay';
 import {
   completeDailyFocus,
   DailyFocus,
@@ -346,6 +347,15 @@ export default function TabsLayout() {
   const keyboard = useAnimatedKeyboard();
   const reduceMotion = useReducedMotion();
   const isManaging = dailyFocus?.status === 'active';
+  const { setCaptureOpen } = useCaptureOverlay();
+
+  // Mirrors the sheet's visibility up to the root layout, which owns the
+  // theme toggle and info button — they sit above this screen's scrim and
+  // have to be faded out from there.
+  const isCaptureVisible = captureState === 'active' || captureState === 'closing';
+  useEffect(() => {
+    setCaptureOpen(isCaptureVisible);
+  }, [isCaptureVisible, setCaptureOpen]);
 
   useEffect(() => {
     AccessibilityInfo.isScreenReaderEnabled().then(setScreenReaderOn);
