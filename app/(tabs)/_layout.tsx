@@ -3,30 +3,51 @@ import { Feather } from '@expo/vector-icons';
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
 import { strings } from '@/constants/strings';
 import { useAppRevealed } from '@/hooks/AppReveal';
+import { BlurTargetProvider, useBlurTarget } from '@/hooks/BlurTarget';
+import { useCaptureOverlay } from '@/hooks/CaptureOverlay';
+import {
+  completeDailyFocus,
+  DailyFocus,
+  declareDailyFocus,
+  deleteDailyFocus,
+  loadDailyFocus,
+} from '@/hooks/dailyFocus';
 import { TabKey, TaskProvider, useTabAllComplete } from '@/hooks/TaskStore';
 import { BottomTabBarProps } from 'expo-router/js-tabs';
-import { BlurView } from 'expo-blur';
+import { BlurTargetView, BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ColorValue,
   Image,
+  Keyboard,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
 import Animated, {
   Easing,
+  FadeIn,
+  FadeOut,
+  SharedValue,
+  useAnimatedKeyboard,
+  useAnimatedProps,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withDelay,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { requestWidgetUpdate } from 'react-native-android-widget';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
+import { TaskWidget } from '@/widgets/TaskWidget';
 
 const BAR_RISE_DISTANCE = 130;
 const BAR_RISE_DELAY_MS = 200;
@@ -37,6 +58,21 @@ const TAB_BAR_HEIGHT = 72;
 const TAB_BAR_RADIUS = 38;
 
 const TAB_BAR_SLOTS = ['today', 'upcoming', 'flame', 'someday', 'history'] as const;
+
+const HOLD_MS = 650;
+const RING_REWIND_MS = 200;
+const RING_OPACITY_OUT_MS = 220;
+const SHEET_CLOSE_MS = 420;
+const CAPTURE_GAP = 16;
+
+// How long the "check your home screen" pill lingers. Long enough to read at
+// a glance, short enough that it's gone before it reads as something to
+// dismiss — it carries no action, so it should never wait on the user.
+const HINT_VISIBLE_MS = 2200;
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+type CaptureState = 'idle' | 'holding' | 'active' | 'closing';
 
 function TaskTabIcon({ tab, color, size }: { tab: TabKey; color: ColorValue; size: number }) {
   const allComplete = useTabAllComplete(tab);
@@ -50,27 +86,48 @@ const GLOW_SIZE = 64;
 const ICON_SIZE = 24;
 const GLOW_OFFSET = -(GLOW_SIZE - ICON_SIZE) / 2;
 
-function FlameTeaserButton({ onPress, isDark }: { onPress: () => void; isDark: boolean }) {
-  const glow = useSharedValue(0);
+const RING_CANVAS = 52;
+const RING_OFFSET = -(RING_CANVAS - ICON_SIZE) / 2;
+const RING_RADIUS = 24.5;
+const RING_STROKE_WIDTH = 2.5;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
+function FlameCaptureButton({
+  isDark,
+  fill,
+  fillOpacity,
+  glow,
+  onPressIn,
+  onPressOut,
+  onPress,
+}: {
+  isDark: boolean;
+  fill: SharedValue<number>;
+  fillOpacity: SharedValue<number>;
+  glow: SharedValue<number>;
+  onPressIn: () => void;
+  onPressOut: () => void;
+  onPress: () => void;
+}) {
   const glowColor = isDark ? '#9fd7bc' : '#7A9B76';
   const glowPeakOpacity = isDark ? 0.9 : 0.55;
 
-  const handlePress = () => {
-    glow.value = withSequence(
-      withTiming(1, { duration: 150, easing: Easing.out(Easing.quad) }),
-      withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) })
-    );
-    onPress();
-  };
-
   const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value }));
+  const ringOpacityStyle = useAnimatedStyle(() => ({ opacity: fillOpacity.value }));
+  const ringAnimatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: RING_CIRCUMFERENCE * (1 - fill.value),
+  }));
 
   return (
     <Pressable
-      onPress={handlePress}
+      onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      onLongPress={() => {}}
+      delayLongPress={HOLD_MS}
       accessibilityRole="button"
-      accessibilityLabel={strings.a11y.flameTeaser}
+      accessibilityLabel={strings.a11y.addTask}
+      accessibilityHint={strings.a11y.addTaskHint}
       hitSlop={12}
       style={({ pressed }) => (pressed ? { opacity: 0.6 } : null)}
       className="items-center justify-center"
@@ -99,6 +156,34 @@ function FlameTeaserButton({ onPress, isDark }: { onPress: () => void; isDark: b
           <Circle cx={GLOW_SIZE / 2} cy={GLOW_SIZE / 2} r={GLOW_SIZE / 2} fill="url(#flameGlow)" />
         </Svg>
       </Animated.View>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          {
+            position: 'absolute',
+            width: RING_CANVAS,
+            height: RING_CANVAS,
+            left: RING_OFFSET,
+            top: RING_OFFSET,
+          },
+          ringOpacityStyle,
+        ]}
+      >
+        <Svg width={RING_CANVAS} height={RING_CANVAS}>
+          <AnimatedCircle
+            cx={RING_CANVAS / 2}
+            cy={RING_CANVAS / 2}
+            r={RING_RADIUS}
+            stroke={isDark ? '#9fd7bc' : '#7A9B76'}
+            strokeWidth={RING_STROKE_WIDTH}
+            strokeLinecap="round"
+            fill="none"
+            strokeDasharray={`${RING_CIRCUMFERENCE} ${RING_CIRCUMFERENCE}`}
+            transform={`rotate(-90 ${RING_CANVAS / 2} ${RING_CANVAS / 2})`}
+            animatedProps={ringAnimatedProps}
+          />
+        </Svg>
+      </Animated.View>
       <Image
         source={isDark ? FLAME_ICON_DARK : FLAME_ICON_LIGHT}
         resizeMode="contain"
@@ -113,11 +198,25 @@ function RisingTabBar({
   descriptors,
   navigation,
   isDark,
-  onFlamePress,
-}: BottomTabBarProps & { isDark: boolean; onFlamePress: () => void }) {
+  fill,
+  fillOpacity,
+  glow,
+  onCaptureBegin,
+  onCaptureEnd,
+  onCapturePress,
+}: BottomTabBarProps & {
+  isDark: boolean;
+  fill: SharedValue<number>;
+  fillOpacity: SharedValue<number>;
+  glow: SharedValue<number>;
+  onCaptureBegin: () => void;
+  onCaptureEnd: () => void;
+  onCapturePress: () => void;
+}) {
   const revealed = useAppRevealed();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const progress = useSharedValue(revealed ? 1 : 0);
+  const blurTarget = useBlurTarget();
 
   useEffect(() => {
     if (revealed) {
@@ -168,6 +267,7 @@ function RisingTabBar({
       >
         <BlurView
           blurMethod="dimezisBlurView"
+          blurTarget={blurTarget}
           intensity={isDark ? 28 : 42}
           tint={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
@@ -180,7 +280,15 @@ function RisingTabBar({
                   key="flame"
                   style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <FlameTeaserButton onPress={onFlamePress} isDark={isDark} />
+                  <FlameCaptureButton
+                    isDark={isDark}
+                    fill={fill}
+                    fillOpacity={fillOpacity}
+                    glow={glow}
+                    onPressIn={onCaptureBegin}
+                    onPressOut={onCaptureEnd}
+                    onPress={onCapturePress}
+                  />
                 </View>
               );
             }
@@ -226,53 +334,205 @@ function RisingTabBar({
   );
 }
 
-function StayTunedToast({ visible }: { visible: boolean }) {
-  if (!visible) {
-    return null;
-  }
-
-  return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        bottom: TAB_BAR_BOTTOM + TAB_BAR_HEIGHT + 16,
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-      }}
-    >
-      <View className="rounded-full bg-[#2a2a28] px-5 py-2.5 shadow-lg">
-        <Text className="text-[13.5px] font-medium text-white" numberOfLines={1}>
-          {strings.nav.flameToast}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 export default function TabsLayout() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { width: SCREEN_WIDTH } = useWindowDimensions();
-  const [stayTunedVisible, setStayTunedVisible] = useState(false);
-  const stayTunedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blurTargetRef = useRef<View>(null);
+
+  const [captureState, setCaptureState] = useState<CaptureState>('idle');
+  const [captureDraft, setCaptureDraft] = useState('');
+  const [screenReaderOn, setScreenReaderOn] = useState(false);
+  const [dailyFocus, setDailyFocus] = useState<DailyFocus | null>(null);
+  const [hintVisible, setHintVisible] = useState(false);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hintTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const captureInputRef = useRef<TextInput>(null);
+  const fill = useSharedValue(0);
+  const fillOpacity = useSharedValue(0);
+  const glow = useSharedValue(0);
+  const keyboard = useAnimatedKeyboard();
+  const reduceMotion = useReducedMotion();
+  const isManaging = dailyFocus?.status === 'active';
+  const { setCaptureOpen } = useCaptureOverlay();
+
+  // Mirrors the sheet's visibility up to the root layout, which owns the
+  // theme toggle and info button — they sit above this screen's scrim and
+  // have to be faded out from there.
+  const isCaptureVisible = captureState === 'active' || captureState === 'closing';
+  useEffect(() => {
+    setCaptureOpen(isCaptureVisible);
+  }, [isCaptureVisible, setCaptureOpen]);
 
   useEffect(() => {
-    return () => {
-      if (stayTunedTimer.current) {
-        clearTimeout(stayTunedTimer.current);
+    AccessibilityInfo.isScreenReaderEnabled().then(setScreenReaderOn);
+    const sub = AccessibilityInfo.addEventListener('screenReaderChanged', setScreenReaderOn);
+    return () => sub.remove();
+  }, []);
+
+  useEffect(() => {
+    loadDailyFocus().then(setDailyFocus);
+  }, []);
+
+  const clearHoldTimer = () => {
+    if (holdTimer.current) {
+      clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+    }
+  };
+
+  useEffect(() => clearHoldTimer, []);
+
+  // Waits out the sheet's own close before appearing, so the pill isn't
+  // cross-fading against the card and scrim on their way out. Any pending
+  // pair is cleared first — a quick declare/replace/declare shouldn't leave
+  // an earlier hide timer racing the newer pill.
+  const showHomeScreenHint = () => {
+    hintTimers.current.forEach(clearTimeout);
+    hintTimers.current = [
+      setTimeout(() => setHintVisible(true), SHEET_CLOSE_MS),
+      setTimeout(() => setHintVisible(false), SHEET_CLOSE_MS + HINT_VISIBLE_MS),
+    ];
+  };
+
+  useEffect(
+    () => () => {
+      hintTimers.current.forEach(clearTimeout);
+    },
+    []
+  );
+
+  // Pushes the new state to the home-screen widget immediately. Without this
+  // the widget only refreshes on its updatePeriodMillis tick (30 min, and
+  // Android batches those) or when added/resized — which reads as random,
+  // laggy updates rather than the instant reflection the flame implies.
+  // updatePeriodMillis stays as the backstop that clears the widget at
+  // midnight without the app being opened.
+  // Both variants are rendered and handed to Android, which picks one per its
+  // own night mode. Sending a single tree resolved from this app's `isDark`
+  // looked right until the widget refreshed itself in the background — that
+  // path has no app state to read, so it fell back to light and a dark-mode
+  // home screen got a cream tile. The pair also means the widget re-themes on
+  // a system theme change without waiting for the app to push again.
+  const pushWidgetUpdate = (focus: DailyFocus) => {
+    requestWidgetUpdate({
+      widgetName: 'Sarani',
+      renderWidget: () => ({
+        light: <TaskWidget status={focus.status} label={focus.label} theme="light" />,
+        dark: <TaskWidget status={focus.status} label={focus.label} theme="dark" />,
+      }),
+      widgetNotFound: () => {
+        // No widget on the home screen yet — nothing to update, not an error.
+      },
+    });
+  };
+
+  const applyDailyFocus = (next: DailyFocus) => {
+    setDailyFocus(next);
+    pushWidgetUpdate(next);
+  };
+
+  const onCapture = async (label: string) => {
+    applyDailyFocus(await declareDailyFocus(label));
+  };
+
+  const beginHold = () => {
+    if (captureState !== 'idle') {
+      return;
+    }
+    setCaptureState('holding');
+    if (!reduceMotion) {
+      fillOpacity.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) });
+      fill.value = withTiming(1, { duration: HOLD_MS, easing: Easing.linear });
+    }
+    holdTimer.current = setTimeout(() => {
+      holdTimer.current = null;
+      setCaptureState('active');
+      setCaptureDraft(isManaging ? (dailyFocus?.label ?? '') : '');
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (!reduceMotion) {
+        fill.value = 1;
+        fillOpacity.value = withDelay(780, withTiming(0, { duration: RING_OPACITY_OUT_MS }));
+        glow.value = withSequence(
+          withTiming(1, { duration: 150, easing: Easing.out(Easing.quad) }),
+          withTiming(0, { duration: 900, easing: Easing.out(Easing.cubic) })
+        );
       }
-    };
+    }, HOLD_MS);
+  };
+
+  const endHold = () => {
+    if (captureState !== 'holding') {
+      return;
+    }
+    clearHoldTimer();
+    setCaptureState('idle');
+    if (!reduceMotion) {
+      fill.value = withTiming(0, {
+        duration: RING_REWIND_MS,
+        easing: Easing.bezier(0.22, 0.61, 0.36, 1),
+      });
+      fillOpacity.value = withTiming(0, { duration: RING_OPACITY_OUT_MS });
+    }
+  };
+
+  // Purely the close animation — every caller now performs its own state
+  // change before calling this, so nothing is sequenced off the animation.
+  const closeSheet = () => {
+    setCaptureState('closing');
+    fillOpacity.value = 0;
+    fill.value = 0;
+    setTimeout(() => setCaptureState('idle'), SHEET_CLOSE_MS);
+  };
+
+  const submitCapture = () => {
+    const label = captureDraft.trim();
+    // Persist and push straight away rather than from closeSheet's callback:
+    // the write has nothing to do with the close animation, and waiting on it
+    // added SHEET_CLOSE_MS of dead time before the widget saw the new value.
+    if (label) {
+      onCapture(label);
+      showHomeScreenHint();
+    }
+    closeSheet();
+  };
+
+  const handleCompleteFocus = async () => {
+    applyDailyFocus(await completeDailyFocus());
+    closeSheet();
+  };
+
+  const handleDeleteFocus = async () => {
+    applyDailyFocus(await deleteDailyFocus());
+    closeSheet();
+  };
+
+  const submitCaptureRef = useRef(submitCapture);
+  useEffect(() => {
+    submitCaptureRef.current = submitCapture;
+  });
+
+  useEffect(() => {
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      if (captureInputRef.current?.isFocused()) {
+        captureInputRef.current.blur();
+        submitCaptureRef.current();
+      }
+    });
+
+    return () => hideSub.remove();
   }, []);
 
   const handleFlamePress = () => {
-    setStayTunedVisible(true);
-    if (stayTunedTimer.current) {
-      clearTimeout(stayTunedTimer.current);
+    if (screenReaderOn && captureState === 'idle') {
+      setCaptureState('active');
+      setCaptureDraft(isManaging ? (dailyFocus?.label ?? '') : '');
     }
-    stayTunedTimer.current = setTimeout(() => setStayTunedVisible(false), 1800);
   };
+
+  const captureCardStyle = useAnimatedStyle(() => ({
+    bottom: TAB_BAR_BOTTOM + TAB_BAR_HEIGHT + CAPTURE_GAP + keyboard.height.value,
+  }));
 
   const baseTabBarStyle = {
     position: 'absolute' as const,
@@ -294,71 +554,189 @@ export default function TabsLayout() {
   };
 
   return (
-    <TaskProvider>
-      <View style={{ flex: 1 }}>
-        <View style={StyleSheet.absoluteFill} className="bg-surface-page dark:bg-surface-dark-page">
-          <AnimatedBackground />
-        </View>
-        <Tabs
-          tabBar={(props) => (
-            <RisingTabBar {...props} isDark={isDark} onFlamePress={handleFlamePress} />
-          )}
-          screenOptions={{
-            headerShown: false,
-            sceneStyle: { backgroundColor: 'transparent' },
-            tabBarActiveTintColor: isDark ? '#9DB89A' : '#7A9B76',
-            tabBarInactiveTintColor: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)',
-            tabBarStyle: baseTabBarStyle,
-            tabBarBackground: () => (
-              <BlurView
-                blurMethod="dimezisBlurView"
-                intensity={isDark ? 28 : 42}
-                tint={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 38, overflow: 'hidden' }]}
+    <BlurTargetProvider target={blurTargetRef}>
+      <TaskProvider>
+        <View style={{ flex: 1 }}>
+          <View
+            style={StyleSheet.absoluteFill}
+            className="bg-surface-page dark:bg-surface-dark-page"
+          >
+            <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
+              <AnimatedBackground />
+            </BlurTargetView>
+          </View>
+          <Tabs
+            tabBar={(props) => (
+              <RisingTabBar
+                {...props}
+                isDark={isDark}
+                fill={fill}
+                fillOpacity={fillOpacity}
+                glow={glow}
+                onCaptureBegin={beginHold}
+                onCaptureEnd={endHold}
+                onCapturePress={handleFlamePress}
               />
-            ),
-            tabBarLabelStyle: {
-              fontSize: 12,
-            },
-          }}
-        >
-          <Tabs.Screen
-            name="today"
-            options={{
-              title: strings.tabs.today,
-              tabBarIcon: ({ color, size }) => (
-                <TaskTabIcon tab="today" color={color} size={size} />
+            )}
+            screenOptions={{
+              headerShown: false,
+              sceneStyle: { backgroundColor: 'transparent' },
+              tabBarActiveTintColor: isDark ? '#9DB89A' : '#7A9B76',
+              tabBarInactiveTintColor: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)',
+              tabBarStyle: baseTabBarStyle,
+              tabBarBackground: () => (
+                <BlurView
+                  blurMethod="dimezisBlurView"
+                  blurTarget={blurTargetRef}
+                  intensity={isDark ? 28 : 42}
+                  tint={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 38, overflow: 'hidden' }]}
+                />
               ),
+              tabBarLabelStyle: {
+                fontSize: 12,
+              },
             }}
-          />
-          <Tabs.Screen
-            name="upcoming"
-            options={{
-              title: strings.tabs.upcoming,
-              tabBarIcon: ({ color, size }) => (
-                <TaskTabIcon tab="upcoming" color={color} size={size} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="someday"
-            options={{
-              title: strings.tabs.someday,
-              tabBarIcon: ({ color, size }) => (
-                <TaskTabIcon tab="someday" color={color} size={size} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="history"
-            options={{
-              title: strings.tabs.history,
-              tabBarIcon: ({ color, size }) => <Feather name="clock" size={size} color={color} />,
-            }}
-          />
-        </Tabs>
-        <StayTunedToast visible={stayTunedVisible} />
-      </View>
-    </TaskProvider>
+          >
+            <Tabs.Screen
+              name="today"
+              options={{
+                title: strings.tabs.today,
+                tabBarIcon: ({ color, size }) => (
+                  <TaskTabIcon tab="today" color={color} size={size} />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="upcoming"
+              options={{
+                title: strings.tabs.upcoming,
+                tabBarIcon: ({ color, size }) => (
+                  <TaskTabIcon tab="upcoming" color={color} size={size} />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="someday"
+              options={{
+                title: strings.tabs.someday,
+                tabBarIcon: ({ color, size }) => (
+                  <TaskTabIcon tab="someday" color={color} size={size} />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="history"
+              options={{
+                title: strings.tabs.history,
+                tabBarIcon: ({ color, size }) => <Feather name="clock" size={size} color={color} />,
+              }}
+            />
+          </Tabs>
+          {captureState === 'active' || captureState === 'closing' ? (
+            <>
+              {/* Sits between the navigator and the capture card, so plain
+                  z-order dims everything behind the sheet without needing to
+                  reach into any screen. Tapping it blurs the input, which is
+                  already the single commit-and-close path. */}
+              <Animated.View
+                style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.68)' }]}
+                entering={reduceMotion ? undefined : FadeIn.duration(340)}
+                exiting={reduceMotion ? undefined : FadeOut.duration(380)}
+              >
+                <Pressable
+                  style={StyleSheet.absoluteFill}
+                  accessibilityRole="button"
+                  accessibilityLabel={strings.a11y.dismissCapture}
+                  onPress={() => captureInputRef.current?.blur()}
+                />
+              </Animated.View>
+              <Animated.View
+                style={[
+                  { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+                  captureCardStyle,
+                ]}
+                entering={reduceMotion ? undefined : FadeIn.duration(340)}
+                exiting={reduceMotion ? undefined : FadeOut.duration(380)}
+              >
+                <View
+                  className="w-[86%] rounded-2xl"
+                  style={{ boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.14)' }}
+                >
+                  <View className="overflow-hidden rounded-2xl bg-white px-[17px] py-[15px] dark:bg-[#1d1d1d]">
+                    {isManaging ? (
+                      <View className="flex-row justify-end gap-4 pb-2">
+                        <Pressable
+                          onPress={handleDeleteFocus}
+                          accessibilityRole="button"
+                          accessibilityLabel={strings.a11y.deleteFocus}
+                        >
+                          <Text className="text-[13px] text-[#a15c5c]">
+                            {strings.tasks.deleteFocus}
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={handleCompleteFocus}
+                          accessibilityRole="button"
+                          accessibilityLabel={strings.a11y.completeFocus}
+                        >
+                          <Text className="text-[13px] text-primary">
+                            {strings.tasks.completeFocus}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    ) : null}
+                    <TextInput
+                      ref={captureInputRef}
+                      autoFocus
+                      value={captureDraft}
+                      onChangeText={setCaptureDraft}
+                      onBlur={submitCapture}
+                      returnKeyType="done"
+                      placeholder={strings.tasks.newTaskPlaceholder}
+                      placeholderTextColor="#b6b3ab"
+                      className="text-[15.5px] leading-5 text-[#2a2a28] dark:text-[#f2f1ee]"
+                    />
+                  </View>
+                </View>
+              </Animated.View>
+            </>
+          ) : null}
+          {/* Sits in the same slot the capture card just vacated — above the
+              tab bar, no keyboard term since the keyboard is gone by the time
+              this appears. Non-interactive by design: it reports where the
+              change landed and leaves on its own. */}
+          {hintVisible ? (
+            <Animated.View
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: TAB_BAR_BOTTOM + TAB_BAR_HEIGHT + CAPTURE_GAP,
+                alignItems: 'center',
+              }}
+              entering={reduceMotion ? undefined : FadeIn.duration(260)}
+              exiting={reduceMotion ? undefined : FadeOut.duration(320)}
+            >
+              <View
+                className="rounded-full"
+                style={{ boxShadow: '0px 6px 18px rgba(0, 0, 0, 0.12)' }}
+              >
+                <View
+                  className="overflow-hidden rounded-full bg-white px-4 py-2 dark:bg-[#1d1d1d]"
+                  accessibilityRole="alert"
+                  accessibilityLiveRegion="polite"
+                >
+                  <Text className="text-[12.5px] text-ink-secondary dark:text-ink-dark-secondary">
+                    {strings.tasks.focusDeclaredHint}
+                  </Text>
+                </View>
+              </View>
+            </Animated.View>
+          ) : null}
+        </View>
+      </TaskProvider>
+    </BlurTargetProvider>
   );
 }

@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import React from 'react';
 import { Text, View } from 'react-native';
 import PrimaryButton from '@/components/ui/PrimaryButton';
@@ -40,6 +41,13 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: unknown, info: { componentStack?: string }) {
     console.error('[sarani] uncaught render error', error, info.componentStack);
+    // Caught errors never reach Sentry's own global handler — the boundary
+    // stops them by design — so this is the only place a render crash gets
+    // reported. The component stack goes along as context because the
+    // fallback UI deliberately tells the user nothing about what broke.
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: info.componentStack } },
+    });
   }
 
   reset = () => {
