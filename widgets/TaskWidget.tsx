@@ -42,21 +42,24 @@ export function TaskWidget({
   status: DailyFocusStatus;
   label: string | null;
   theme?: keyof typeof THEME;
-  // Real widget bounds in dp, from the task handler's widgetInfo. Passed
-  // explicitly because 'match_parent' leaves the rendered card smaller than
-  // the launcher's actual cell — the library's documented size-discrepancy
-  // limitation, which it resolves by cropping. Falls back to match_parent
-  // for callers that have no size info (e.g. requestWidgetUpdate).
-  width?: number;
-  height?: number;
+  // Real widget bounds in dp, as Android reports them. Required, not
+  // optional: 'match_parent' renders smaller than the launcher's actual cell
+  // (the library's documented size-discrepancy limitation, which it resolves
+  // by cropping), so a caller that omits the size silently draws the widget
+  // at the wrong size. Every render path is handed these by the library —
+  // the task handler via widgetInfo, requestWidgetUpdate via its
+  // renderWidget callback — so there is no caller that legitimately lacks
+  // them, and making them required keeps it that way.
+  width: number;
+  height: number;
 }) {
   const t = THEME[theme];
   const text = copyFor(status, label);
   return (
     <FlexWidget
       style={{
-        width: width ?? 'match_parent',
-        height: height ?? 'match_parent',
+        width,
+        height,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: t.surface,

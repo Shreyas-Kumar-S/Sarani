@@ -417,9 +417,31 @@ export default function TabsLayout() {
   const pushWidgetUpdate = (focus: DailyFocus) => {
     requestWidgetUpdate({
       widgetName: 'Sarani',
-      renderWidget: () => ({
-        light: <TaskWidget status={focus.status} label={focus.label} theme="light" />,
-        dark: <TaskWidget status={focus.status} label={focus.label} theme="dark" />,
+      // renderWidget is called once per placed widget and handed that
+      // widget's real bounds, so the size comes from Android here exactly as
+      // it does in the headless task handler. Rendering without it fell back
+      // to match_parent, which draws smaller than the launcher's cell — so
+      // the widget changed size depending on whether Android or the app had
+      // last redrawn it.
+      renderWidget: ({ width, height }) => ({
+        light: (
+          <TaskWidget
+            status={focus.status}
+            label={focus.label}
+            theme="light"
+            width={width}
+            height={height}
+          />
+        ),
+        dark: (
+          <TaskWidget
+            status={focus.status}
+            label={focus.label}
+            theme="dark"
+            width={width}
+            height={height}
+          />
+        ),
       }),
       widgetNotFound: () => {
         // No widget on the home screen yet — nothing to update, not an error.
