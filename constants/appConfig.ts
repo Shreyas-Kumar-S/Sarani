@@ -12,6 +12,12 @@ export const SANITY_DATASET =
   (__DEV__ ? 'development' : 'production');
 export const SANITY_API_VERSION = '2024-01-01';
 
+// A DSN only identifies which project to ingest into — it carries no read or
+// write access and ships in the client bundle either way, so it isn't a
+// secret and doesn't need EAS's secret store. Absent (a fork, or a local
+// clone with no env), Sentry stays switched off rather than half-configured.
+export const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
+
 // Android package is known; iOS id is assigned at first App Store Connect submit.
 export const PLAY_STORE_URL =
   'https://play.google.com/store/apps/details?id=com.shreyas.sarani';

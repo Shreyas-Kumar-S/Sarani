@@ -2,6 +2,7 @@ import { BlurView } from 'expo-blur';
 import { useColorScheme } from 'nativewind';
 import React, { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useBlurTarget } from '@/hooks/BlurTarget';
 
 type GlassCardProps = {
   children: ReactNode;
@@ -11,6 +12,7 @@ type GlassCardProps = {
 export default function GlassCard({ children, className = '' }: GlassCardProps) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const blurTarget = useBlurTarget();
 
   return (
     <View
@@ -22,6 +24,7 @@ export default function GlassCard({ children, className = '' }: GlassCardProps) 
       <View className="overflow-hidden rounded-[28px] border border-black/[0.12] dark:border-white/10">
         <BlurView
           blurMethod="dimezisBlurView"
+          blurTarget={blurTarget}
           intensity={isDark ? 28 : 55}
           tint={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}

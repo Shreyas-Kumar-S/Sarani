@@ -78,16 +78,18 @@ export const strings = {
     },
     },
 
-  nav: {
-    flameToast: 'Stay tuned',
-  },
-
   tasks: {
     addCta: '+ Add task',
     newTaskPlaceholder: 'New task',
     carriedOverTag: 'Undone',
     // First-pass copy — wording deliberately deferred; change freely.
     decayedTag: 'Been a while',
+    completeFocus: 'Complete',
+    deleteFocus: 'Delete',
+    // Shown once, briefly, after the flame sheet closes on a declare or
+    // replace — the widget has already updated by then and there is nothing
+    // in the app itself to look at, so this points at where the change landed.
+    focusDeclaredHint: 'Check your home screen',
   },
 
   actions: {
@@ -100,11 +102,15 @@ export const strings = {
     commitEdit: 'Save changes',
     openAbout: 'About Sarani',
     closeAbout: 'Close',
-    flameTeaser: 'Coming soon',
     editTaskPrefix: 'Edit',
     editTaskInput: 'Edit task text',
     newTaskInput: 'New task text',
     moveToUpcoming: 'Move to Upcoming',
+    addTask: 'Add task',
+    addTaskHint: 'Press and hold to capture a task',
+    completeFocus: 'Complete your One Thing',
+    deleteFocus: 'Delete your One Thing',
+    dismissCapture: 'Dismiss',
   },
 
   errorBoundary: {
