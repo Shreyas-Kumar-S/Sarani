@@ -2,6 +2,7 @@
 import React from 'react';
 import { FlexWidget, TextWidget } from 'react-native-android-widget';
 import type { DailyFocusStatus } from '@/hooks/dailyFocus';
+import { layoutFor, TILE } from './widgetLayout';
 
 const THEME = {
   light: {
@@ -17,11 +18,6 @@ const THEME = {
     text: '#ffffff',
   },
 } as const;
-
-const PADDING = 18;
-const BADGE = 18;
-const GAP = 16;
-const LINE_HEIGHT = 25;
 
 function copyFor(status: DailyFocusStatus, label: string | null): string {
   switch (status) {
@@ -47,48 +43,40 @@ export function TaskWidget({
   status: DailyFocusStatus;
   label: string | null;
   theme?: keyof typeof THEME;
-  // Real widget bounds in dp, as Android reports them. Required, not
-  // optional: 'match_parent' renders smaller than the launcher's actual cell
-  // (the library's documented size-discrepancy limitation, which it resolves
-  // by cropping), so a caller that omits the size silently draws the widget
-  // at the wrong size. Every render path is handed these by the library —
-  // the task handler via widgetInfo, requestWidgetUpdate via its
-  // renderWidget callback — so there is no caller that legitimately lacks
-  // them, and making them required keeps it that way.
+  // Widget bounds in dp, as Android reports them. They drive the layout maths
+  // (padding, gap, type size, line count) and nothing else — the tile itself
+  // is match_parent. The native side measures its root at the bounds it reads
+  // at draw time, and those can be a resize step newer than the numbers a
+  // queued task was handed; a tile pinned to the older numbers gets cropped
+  // by the bitmap (or leaves a transparent margin), whereas match_parent
+  // always fills exactly what gets drawn. Required so no caller falls back to
+  // wrap_content, which hugs the content instead of filling the cell.
   width: number;
   height: number;
 }) {
   const t = THEME[theme];
   const text = copyFor(status, label);
-
-  // Vertical padding gives way before the text does. A full line box needs
-  // LINE_HEIGHT, and app.json lets the widget be resized down to 40dp, which
-  // is less than PADDING * 2 + LINE_HEIGHT — so at the small end fixed padding
-  // would eat the line and Android would clip the glyphs.
-  const paddingY = Math.max(6, Math.min(PADDING, (height - LINE_HEIGHT) / 2));
-  // Only as many lines as actually fit. maxLines beyond that doesn't wrap into
-  // space that isn't there; it just hands Android a taller TextView to crop.
-  const maxLines = Math.max(1, Math.floor((height - paddingY * 2) / LINE_HEIGHT));
+  const layout = layoutFor(width, height, text);
 
   return (
     <FlexWidget
       style={{
-        width,
-        height,
+        width: 'match_parent',
+        height: 'match_parent',
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: t.surface,
-        borderRadius: 22,
-        paddingHorizontal: PADDING,
-        paddingVertical: paddingY,
+        borderRadius: TILE.radius,
+        paddingHorizontal: layout.paddingX,
+        paddingVertical: layout.paddingY,
       }}
       accessibilityLabel={`Sarani: ${text}`}
       clickAction="OPEN_APP"
     >
       <FlexWidget
         style={{
-          width: BADGE,
-          height: BADGE,
+          width: TILE.badge,
+          height: TILE.badge,
           borderRadius: 12,
           backgroundColor: t.badgeWash,
           justifyContent: 'center',
@@ -97,25 +85,29 @@ export function TaskWidget({
       >
         <TextWidget text="S" style={{ fontSize: 14, fontWeight: 'bold', color: t.badgeText }} />
       </FlexWidget>
-      <FlexWidget style={{ width: GAP, height: 1 }} />
+      <FlexWidget style={{ width: layout.gap, height: 1 }} />
       {/* width 0 + flex 1 is Android's "take exactly the leftover space" idiom
         (LinearLayout weight), and it has to live on a FlexWidget: TextWidget
         doesn't map style.flex onto the underlying layout weight, so flex on
         the text itself is silently dropped. Without a bounded width the
         TextView measures at its full single-line width and Android crops it
-        at the parent's edge — it never wraps, which also made maxLines below
-        dead code. */}
+        at the parent's edge — it never wraps. */}
       <FlexWidget style={{ flex: 1, width: 0, flexDirection: 'row' }}>
+        {/* Type is sized in dp, not sp: the size was chosen to fit these exact
+          bounds, and letting the system font scale multiply it afterwards
+          would undo that fit (and ellipsise copy that had room). Someone who
+          needs larger type can make the widget larger; the layout follows. */}
         <TextWidget
           text={text}
-          maxLines={maxLines}
+          maxLines={layout.maxLines}
           truncate="END"
+          allowFontScaling={false}
           style={{
             width: 'match_parent',
-            fontSize: 19,
+            fontSize: layout.fontSize,
             fontWeight: 'bold',
             color: t.text,
-            lineHeight: LINE_HEIGHT,
+            lineHeight: layout.lineHeight,
           }}
         />
       </FlexWidget>

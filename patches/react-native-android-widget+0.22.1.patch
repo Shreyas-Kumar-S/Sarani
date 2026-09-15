@@ -1,3 +1,234 @@
+diff --git a/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/RNWidgetBackgroundTaskWorker.java b/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/RNWidgetBackgroundTaskWorker.java
+index 3ceb3a4..a177bb4 100644
+--- a/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/RNWidgetBackgroundTaskWorker.java
++++ b/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/RNWidgetBackgroundTaskWorker.java
+@@ -7,13 +7,9 @@ import androidx.annotation.Nullable;
+ import androidx.work.Data;
+ import androidx.work.WorkerParameters;
+ 
+-import com.facebook.react.bridge.Arguments;
+ import com.facebook.react.jstasks.HeadlessJsTaskConfig;
+ import com.reactnativeandroidwidget.oss.HeadlessJsTaskWorker;
+ 
+-import java.util.HashMap;
+-import java.util.Map;
+-
+ public class RNWidgetBackgroundTaskWorker extends HeadlessJsTaskWorker {
+ 
+     public RNWidgetBackgroundTaskWorker(
+@@ -25,14 +21,6 @@ public class RNWidgetBackgroundTaskWorker extends HeadlessJsTaskWorker {
+     @Nullable
+     @Override
+     protected HeadlessJsTaskConfig getTaskConfig(Data data) {
+-        Map<String, Object> arguments = new HashMap<>(data.getKeyValueMap());
+-        arguments.put("screenInfo", RNWidgetUtil.getScreenInfo(getApplicationContext()).toHashMap());
+-
+-        return new HeadlessJsTaskConfig(
+-            "RNWidgetBackgroundTask",
+-            Arguments.makeNativeMap(arguments),
+-            30 * 1000,
+-            true
+-        );
++        return RNWidgetJsCommunication.buildTaskConfig(getApplicationContext(), data);
+     }
+ }
+diff --git a/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/RNWidgetJsCommunication.java b/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/RNWidgetJsCommunication.java
+index d26a3ee..cfdd331 100644
+--- a/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/RNWidgetJsCommunication.java
++++ b/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/RNWidgetJsCommunication.java
+@@ -2,6 +2,7 @@ package com.reactnativeandroidwidget;
+ 
+ import android.content.Context;
+ import android.os.Build;
++import android.os.PowerManager;
+ 
+ import androidx.work.Data;
+ import androidx.work.ExistingWorkPolicy;
+@@ -9,9 +10,23 @@ import androidx.work.OneTimeWorkRequest;
+ import androidx.work.OutOfQuotaPolicy;
+ import androidx.work.WorkManager;
+ 
++import com.facebook.react.ReactApplication;
++import com.facebook.react.ReactHost;
++import com.facebook.react.bridge.Arguments;
++import com.facebook.react.bridge.ReactContext;
++import com.facebook.react.bridge.UiThreadUtil;
++import com.facebook.react.jstasks.HeadlessJsTaskConfig;
++import com.facebook.react.jstasks.HeadlessJsTaskContext;
++import com.facebook.react.jstasks.HeadlessJsTaskEventListener;
++
++import java.util.HashMap;
++import java.util.Map;
+ import java.util.concurrent.TimeUnit;
+ 
+ public class RNWidgetJsCommunication {
++    public static final String TASK_KEY = "RNWidgetBackgroundTask";
++    public static final long TASK_TIMEOUT_MS = 30 * 1000;
++
+     public static void requestWidgetUpdate(Context context, String widgetName) {
+         int[] widgetIds = RNWidgetUtil.getWidgetIds(context, widgetName);
+ 
+@@ -22,6 +37,113 @@ public class RNWidgetJsCommunication {
+     }
+ 
+     protected static void startBackgroundTask(Context context, Data data) {
++        startBackgroundTask(context, data, null);
++    }
++
++    // uniqueWorkName, when given, makes a still-pending request with the same
++    // name get replaced by this one. A resize drag fires one options-changed
++    // event per step; without coalescing each step queues its own render, they
++    // run concurrently, and whichever lands last wins - which need not be the
++    // one for the final size.
++    protected static void startBackgroundTask(Context context, Data data, String uniqueWorkName) {
++        if (startInProcess(context, data, uniqueWorkName)) {
++            return;
++        }
++        enqueueWork(context, data, uniqueWorkName);
++    }
++
++    // Widget events arrive in the app's own process (AppWidgetProvider is a
++    // BroadcastReceiver). When a React instance is already running there is
++    // nothing WorkManager can add: it exists to boot JS when the app is dead,
++    // and in exchange it is subject to expedited-work quota and OEM background
++    // throttling, which can hold a resize render back for seconds while the
++    // launcher shows the stale bitmap stretched to the new bounds. So start the
++    // headless task directly when JS is up, and fall back to WorkManager only
++    // when it has to be booted.
++    private static boolean startInProcess(Context context, Data data, String uniqueWorkName) {
++        try {
++            Context app = context.getApplicationContext();
++            if (!(app instanceof ReactApplication)) {
++                return false;
++            }
++            ReactHost host = ((ReactApplication) app).getReactHost();
++            if (host == null) {
++                return false;
++            }
++            ReactContext reactContext = host.getCurrentReactContext();
++            if (reactContext == null || !reactContext.hasActiveReactInstance()) {
++                return false;
++            }
++            HeadlessJsTaskConfig taskConfig = buildTaskConfig(context, data);
++            // The receiver's own wake lock ends when onReceive returns, and the
++            // JS task runs after that. WorkManager used to hold one on our
++            // behalf; without it a periodic update arriving with the screen off
++            // could stall mid-render until the CPU next wakes. Timed, so a task
++            // that never reports back cannot pin the CPU past the task timeout.
++            PowerManager.WakeLock wakeLock = acquireWakeLock(context);
++            UiThreadUtil.runOnUiThread(() -> {
++                try {
++                    HeadlessJsTaskContext taskContext = HeadlessJsTaskContext.getInstance(reactContext);
++                    int[] taskId = new int[]{-1};
++                    taskContext.addTaskEventListener(new HeadlessJsTaskEventListener() {
++                        @Override
++                        public void onHeadlessJsTaskStart(int id) {
++                        }
++
++                        @Override
++                        public void onHeadlessJsTaskFinish(int id) {
++                            if (id == taskId[0]) {
++                                taskContext.removeTaskEventListener(this);
++                                releaseWakeLock(wakeLock);
++                            }
++                        }
++                    });
++                    taskId[0] = taskContext.startTask(taskConfig);
++                } catch (Exception e) {
++                    // The instance went away between the check and the start;
++                    // let WorkManager bring it back.
++                    e.printStackTrace();
++                    releaseWakeLock(wakeLock);
++                    enqueueWork(context, data, uniqueWorkName);
++                }
++            });
++            return true;
++        } catch (Exception e) {
++            e.printStackTrace();
++            return false;
++        }
++    }
++
++    private static PowerManager.WakeLock acquireWakeLock(Context context) {
++        try {
++            PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
++            if (powerManager == null) {
++                return null;
++            }
++            PowerManager.WakeLock wakeLock = powerManager.newWakeLock(
++                PowerManager.PARTIAL_WAKE_LOCK,
++                context.getPackageName() + ":rnwidget-task"
++            );
++            wakeLock.setReferenceCounted(false);
++            wakeLock.acquire(TASK_TIMEOUT_MS);
++            return wakeLock;
++        } catch (Exception e) {
++            e.printStackTrace();
++            return null;
++        }
++    }
++
++    private static void releaseWakeLock(PowerManager.WakeLock wakeLock) {
++        try {
++            if (wakeLock != null && wakeLock.isHeld()) {
++                wakeLock.release();
++            }
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++
++    private static void enqueueWork(Context context, Data data, String uniqueWorkName) {
+         workManagerWorkaround(context);
+ 
+         OneTimeWorkRequest.Builder builder =
+@@ -34,9 +156,24 @@ public class RNWidgetJsCommunication {
+             builder.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST);
+         }
+ 
+-        WorkManager
+-            .getInstance(context)
+-            .enqueue(builder.build());
++        WorkManager workManager = WorkManager.getInstance(context);
++        if (uniqueWorkName != null) {
++            workManager.enqueueUniqueWork(uniqueWorkName, ExistingWorkPolicy.REPLACE, builder.build());
++        } else {
++            workManager.enqueue(builder.build());
++        }
++    }
++
++    protected static HeadlessJsTaskConfig buildTaskConfig(Context context, Data data) {
++        Map<String, Object> arguments = new HashMap<>(data.getKeyValueMap());
++        arguments.put("screenInfo", RNWidgetUtil.getScreenInfo(context).toHashMap());
++
++        return new HeadlessJsTaskConfig(
++            TASK_KEY,
++            Arguments.makeNativeMap(arguments),
++            TASK_TIMEOUT_MS,
++            true
++        );
+     }
+ 
+     // `APPWIDGET_UPDATE` (`onUpdate`) method is called when the WorkManager queue is empty.
+diff --git a/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/RNWidgetProvider.java b/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/RNWidgetProvider.java
+index c138d81..e143692 100644
+--- a/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/RNWidgetProvider.java
++++ b/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/RNWidgetProvider.java
+@@ -23,7 +23,13 @@ public class RNWidgetProvider extends AppWidgetProvider {
+             storeWidgetSize(context, appWidgetId);
+ 
+             Data data = RNWidgetJsCommunication.buildData(context, getClass().getSimpleName(), appWidgetId, "WIDGET_RESIZED");
+-            RNWidgetJsCommunication.startBackgroundTask(context, data);
++            // One pending resize render per widget: a drag fires this once per
++            // step, and only the render for the final bounds is worth doing.
++            RNWidgetJsCommunication.startBackgroundTask(
++                context,
++                data,
++                context.getPackageName() + ".WIDGET_RESIZED." + appWidgetId
++            );
+         }
+     }
+ 
 diff --git a/node_modules/react-native-android-widget/android/src/main/res/layout-night/rn_widget.xml b/node_modules/react-native-android-widget/android/src/main/res/layout-night/rn_widget.xml
 index 9426de7..aa94af3 100644
 --- a/node_modules/react-native-android-widget/android/src/main/res/layout-night/rn_widget.xml
