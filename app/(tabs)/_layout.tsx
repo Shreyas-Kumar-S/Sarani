@@ -21,6 +21,7 @@ import { useColorScheme } from 'nativewind';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
+  AppState,
   ColorValue,
   Image,
   Keyboard,
@@ -45,9 +46,8 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { requestWidgetUpdate } from 'react-native-android-widget';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
-import { TaskWidget } from '@/widgets/TaskWidget';
+import { pushWidgetUpdate } from '@/widgets/pushWidgetUpdate';
 
 const BAR_RISE_DISTANCE = 130;
 const BAR_RISE_DELAY_MS = 200;
@@ -370,8 +370,27 @@ export default function TabsLayout() {
     return () => sub.remove();
   }, []);
 
+  // Loads the One Thing on mount and again every time the app comes back to
+  // the foreground, pushing the result to the widget each time. Daily Focus
+  // has no rollover — a stored record from another day resolves to unset —
+  // but a process that survives midnight would otherwise keep yesterday's
+  // `active` label in state, and the widget's only reset would be its 30-min
+  // tick, which Android batches and the OEMs throttle. Coming back to the app
+  // is the moment both are cheap to correct.
   useEffect(() => {
-    loadDailyFocus().then(setDailyFocus);
+    const refresh = () => {
+      loadDailyFocus().then((focus) => {
+        setDailyFocus(focus);
+        pushWidgetUpdate(focus);
+      });
+    };
+    refresh();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        refresh();
+      }
+    });
+    return () => sub.remove();
   }, []);
 
   const clearHoldTimer = () => {
@@ -401,53 +420,6 @@ export default function TabsLayout() {
     },
     []
   );
-
-  // Pushes the new state to the home-screen widget immediately. Without this
-  // the widget only refreshes on its updatePeriodMillis tick (30 min, and
-  // Android batches those) or when added/resized — which reads as random,
-  // laggy updates rather than the instant reflection the flame implies.
-  // updatePeriodMillis stays as the backstop that clears the widget at
-  // midnight without the app being opened.
-  // Both variants are rendered and handed to Android, which picks one per its
-  // own night mode. Sending a single tree resolved from this app's `isDark`
-  // looked right until the widget refreshed itself in the background — that
-  // path has no app state to read, so it fell back to light and a dark-mode
-  // home screen got a cream tile. The pair also means the widget re-themes on
-  // a system theme change without waiting for the app to push again.
-  const pushWidgetUpdate = (focus: DailyFocus) => {
-    requestWidgetUpdate({
-      widgetName: 'Sarani',
-      // renderWidget is called once per placed widget and handed that
-      // widget's real bounds, so the size comes from Android here exactly as
-      // it does in the headless task handler. Rendering without it fell back
-      // to match_parent, which draws smaller than the launcher's cell — so
-      // the widget changed size depending on whether Android or the app had
-      // last redrawn it.
-      renderWidget: ({ width, height }) => ({
-        light: (
-          <TaskWidget
-            status={focus.status}
-            label={focus.label}
-            theme="light"
-            width={width}
-            height={height}
-          />
-        ),
-        dark: (
-          <TaskWidget
-            status={focus.status}
-            label={focus.label}
-            theme="dark"
-            width={width}
-            height={height}
-          />
-        ),
-      }),
-      widgetNotFound: () => {
-        // No widget on the home screen yet — nothing to update, not an error.
-      },
-    });
-  };
 
   const applyDailyFocus = (next: DailyFocus) => {
     setDailyFocus(next);
