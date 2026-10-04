@@ -69,10 +69,6 @@ export default function InfoButton() {
   const style = useAnimatedStyle(() => ({ opacity: visibility.value }));
 
   return (
-    // Absolute positioning lives on this plain wrapping View (a static style
-    // object) rather than on the Pressable itself — combining a function-form
-    // `style` (needed for the pressed-state feedback) with a `className` on
-    // the same element was silently dropping the position/top/right styles.
     <Animated.View
       pointerEvents={canInteract ? 'auto' : 'none'}
       style={[

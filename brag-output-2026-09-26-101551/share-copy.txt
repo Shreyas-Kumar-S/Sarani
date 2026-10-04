@@ -1,0 +1,1 @@
+Introducing Sarani: a quiet task app that never decides for you where an unfinished task goes. It waits in Today, marked Undone, until you choose whether it still matters, and the one thing you pick lives on your home screen. From Attention to Intention.

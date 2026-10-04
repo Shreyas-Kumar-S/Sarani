@@ -130,6 +130,8 @@ module.exports = {
   },
   useAnimatedReaction: NOOP,
   useAnimatedRef: () => ({ current: null }),
+  useFrameCallback: () => ({ setActive: NOOP, isActive: false, callbackId: 0 }),
+  useReducedMotion: () => false,
   // Not used by this app directly, but react-native-gesture-handler's
   // GestureDetector reaches for both internally.
   useEvent: () => NOOP,

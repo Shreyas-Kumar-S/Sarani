@@ -1,141 +1,23 @@
 import { useColorScheme } from 'nativewind';
-import React, { useEffect } from 'react';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
-import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
+import React from 'react';
+import Animated from 'react-native-reanimated';
+import { Floater, type FloaterMotion } from './background/Floater';
+import { SHAPES, type ShapeKind } from './background/shapes';
 
-type OrbVariant = 'bulb' | 'bubble';
-
-type OrbProps = {
+type OrbSpec = FloaterMotion & {
+  shape: ShapeKind;
   left: number;
   top: number;
-  size: number; // diameter of the orb's bounding box
-  variant: OrbVariant;
-  color: string;
+  size: number;
   opacity: number;
-  driftX: number;
-  driftY: number;
-  durationX: number;
-  durationY: number;
-  delay: number;
 };
 
-// "bulb": a mostly-solid colored core that only softens over the last stretch,
-// so it reads as a clear glowing circle (used for the large bottom anchors).
-const BULB_STOPS = [
-  { offset: '0%', mult: 1 },
-  { offset: '58%', mult: 0.96 },
-  { offset: '80%', mult: 0.72 },
-  { offset: '93%', mult: 0.32 },
-  { offset: '100%', mult: 0 },
-];
-
-// A single floating orb. Fills are radial gradients (no SVG blur filter — that
-// clipped/banded on iOS and did nothing on Android), so they render smoothly on
-// both platforms. Motion is an organic looping drift plus a gentle breathing.
-function Orb({
-  left,
-  top,
-  size,
-  variant,
-  color,
-  opacity,
-  driftX,
-  driftY,
-  durationX,
-  durationY,
-  delay,
-}: OrbProps) {
-  const px = useSharedValue(0);
-  const py = useSharedValue(0);
-
-  useEffect(() => {
-    px.value = withDelay(
-      delay,
-      withRepeat(withTiming(1, { duration: durationX, easing: Easing.inOut(Easing.sin) }), -1, true)
-    );
-    py.value = withDelay(
-      delay,
-      withRepeat(withTiming(1, { duration: durationY, easing: Easing.inOut(Easing.sin) }), -1, true)
-    );
-    // px/py are stable shared values; durations/delay are constant props.
-  }, [px, py, durationX, durationY, delay]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: (px.value - 0.5) * driftX * 2 },
-      { translateY: (py.value - 0.5) * driftY * 2 },
-      { scale: 0.92 + px.value * 0.16 },
-    ],
-  }));
-
-  const gradientId = `orb-${left}-${top}`;
-  const r = size / 2;
-
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={[{ position: 'absolute', left, top, width: size, height: size }, animStyle]}
-    >
-      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {variant === 'bulb' ? (
-          <>
-            <Defs>
-              <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
-                {BULB_STOPS.map((s) => (
-                  <Stop
-                    key={s.offset}
-                    offset={s.offset}
-                    stopColor={color}
-                    stopOpacity={opacity * s.mult}
-                  />
-                ))}
-              </RadialGradient>
-            </Defs>
-            <Ellipse cx={r} cy={r} rx={r} ry={r} fill={`url(#${gradientId})`} />
-          </>
-        ) : (
-          <>
-            {/* True bubble: glassy interior brightening toward the edge, a
-                defined rim, and a small specular highlight. */}
-            <Defs>
-              <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
-                <Stop offset="0%" stopColor={color} stopOpacity={opacity * 0.05} />
-                <Stop offset="70%" stopColor={color} stopOpacity={opacity * 0.13} />
-                <Stop offset="100%" stopColor={color} stopOpacity={opacity * 0.3} />
-              </RadialGradient>
-            </Defs>
-            <Ellipse
-              cx={r}
-              cy={r}
-              rx={r - 1.5}
-              ry={r - 1.5}
-              fill={`url(#${gradientId})`}
-              stroke={color}
-              strokeWidth={2}
-              strokeOpacity={opacity * 0.9}
-            />
-            <Ellipse
-              cx={size * 0.33}
-              cy={size * 0.29}
-              rx={size * 0.1}
-              ry={size * 0.07}
-              fill="#FFFFFF"
-              opacity={opacity * 0.6}
-            />
-          </>
-        )}
-      </Svg>
-    </Animated.View>
-  );
-}
-
+// The persistent atmospheric layer behind the tabs. Rendered once in the
+// tabs layout, not per screen, so switching tabs never remounts it.
+//
+// Each entry names a shape from the registry and describes where it sits
+// and how it drifts. Motion lives in Floater; the picture lives in the
+// shape. Changing what floats means changing `shape` here, nothing else.
 export default function AnimatedBackground() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -144,14 +26,14 @@ export default function AnimatedBackground() {
   // near-black, or nothing shows against the background).
   const orbColor = isDark ? '#4A5E3E' : '#82AC78';
 
-  const orbs: OrbProps[] = [
+  const orbs: OrbSpec[] = [
     // Large bottom anchors — soft bulbs.
     {
+      shape: 'bulb',
+      motion: 'loop',
       left: -70,
       top: 560,
       size: 300,
-      variant: 'bulb',
-      color: orbColor,
       opacity: isDark ? 0.12 : 0.5,
       driftX: 55,
       driftY: 72,
@@ -160,11 +42,11 @@ export default function AnimatedBackground() {
       delay: 0,
     },
     {
+      shape: 'bulb',
+      motion: 'loop',
       left: 190,
       top: 620,
       size: 260,
-      variant: 'bulb',
-      color: orbColor,
       opacity: isDark ? 0.1 : 0.46,
       driftX: 64,
       driftY: 80,
@@ -172,57 +54,58 @@ export default function AnimatedBackground() {
       durationY: 4400,
       delay: 300,
     },
-    // Floating ones — true bubbles.
+    // Floating ones — true bubbles, wandering rather than looping so they
+    // never retrace a figure.
     {
+      shape: 'bubble',
+      motion: 'wander',
       left: 70,
       top: 380,
       size: 190,
-      variant: 'bubble',
-      color: orbColor,
       opacity: isDark ? 0.14 : 0.6,
       driftX: 82,
       driftY: 74,
-      durationX: 4200,
-      durationY: 5200,
+      durationX: 3400,
+      durationY: 4200,
       delay: 700,
     },
     {
+      shape: 'bubble',
+      motion: 'wander',
       left: 250,
       top: 190,
       size: 120,
-      variant: 'bubble',
-      color: orbColor,
       opacity: isDark ? 0.18 : 0.7,
       driftX: 96,
       driftY: 108,
-      durationX: 3400,
-      durationY: 2900,
+      durationX: 2700,
+      durationY: 2300,
       delay: 500,
     },
     {
+      shape: 'bubble',
+      motion: 'wander',
       left: -20,
       top: 300,
       size: 140,
-      variant: 'bubble',
-      color: orbColor,
       opacity: isDark ? 0.14 : 0.6,
       driftX: 80,
       driftY: 92,
-      durationX: 3900,
-      durationY: 3300,
+      durationX: 3100,
+      durationY: 2600,
       delay: 1000,
     },
     {
+      shape: 'bubble',
+      motion: 'wander',
       left: 160,
       top: 480,
       size: 95,
-      variant: 'bubble',
-      color: orbColor,
       opacity: isDark ? 0.18 : 0.72,
       driftX: 104,
       driftY: 90,
-      durationX: 3000,
-      durationY: 3600,
+      durationX: 2400,
+      durationY: 2900,
       delay: 200,
     },
   ];
@@ -232,9 +115,14 @@ export default function AnimatedBackground() {
       pointerEvents="none"
       style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
     >
-      {orbs.map((orb) => (
-        <Orb key={`orb-${orb.left}-${orb.top}-${orb.durationX}`} {...orb} />
-      ))}
+      {orbs.map(({ shape, opacity, ...floater }) => {
+        const Shape = SHAPES[shape];
+        return (
+          <Floater key={`${shape}-${floater.left}-${floater.top}`} {...floater}>
+            <Shape size={floater.size} color={orbColor} opacity={opacity} />
+          </Floater>
+        );
+      })}
     </Animated.View>
   );
 }
